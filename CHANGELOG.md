@@ -4,6 +4,13 @@ All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomou
 
 ## Unreleased
 
+## 4.4.0-rc.1 — Live visualization and runtime controls
+
+- Replaced raw six-axis numbers with a live 3D cube plus configuration-aware key and wheel feedback, while retaining numeric telemetry under technical details.
+- Added safe runtime response-curve selection and nine-position precision/edge controls backed by the existing EEPROM parameter system.
+- Added a one-click resting-position reset to the Tune page.
+- Added persistent physical-to-logical key reassignment with a versioned, validated EEPROM record, so swapped wiring can be corrected without reopening or reflashing the controller.
+
 ## 4.3.1 — Native macOS bundle repair
 
 - Replaced the hand-built macOS application folder with PyInstaller's native `BUNDLE` target so embedded binaries and the final app receive valid ad-hoc signatures in the correct order.

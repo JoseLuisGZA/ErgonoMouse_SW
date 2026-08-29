@@ -103,4 +103,8 @@
         keyState[ROTARY_KEY_IDX_B] = 0;
     }
   }
+
+  int32_t getEncoderPosition(){
+    return newEncoderValue;
+  }
 #endif // whole file is only implemented #if ROTARY_AXIS > 0 or ROTARY_KEYS > 0

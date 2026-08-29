@@ -40,7 +40,10 @@ class ServerTests(unittest.TestCase):
         self.assertIn("data-screen=\"6\"", body)
         self.assertIn('id="resumeTuning"', body)
         self.assertIn('id="readyFineTune"', body)
-        self.assertIn("motion-exploded.webp", body)
+        self.assertIn('id="motionCube"', body)
+        self.assertIn('id="resetCenter"', body)
+        self.assertIn('id="keyMappingCard"', body)
+        self.assertIn('id="curveMode"', body)
 
     def test_status_is_json(self) -> None:
         with urllib.request.urlopen(f"{self.base_url}/api/status", timeout=5) as response:

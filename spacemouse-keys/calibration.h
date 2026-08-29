@@ -5,6 +5,7 @@ void debugOutput1(int* rawReads, int* keyVals);
 void debugOutput2(int* centered);
 void debugOutput4(int16_t* velocity, uint8_t* keyOut);
 void debugOutput5(int* centered, int16_t* velocity);
+void debugOutputLive(int16_t* velocity, uint8_t* keyState, int32_t wheelPosition);
 
 void printArray(int arr[], int size);
 int  calcMinMax(int* centered);

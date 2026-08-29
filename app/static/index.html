@@ -246,7 +246,16 @@
             </div>
 
             <div class="motion-test-card" id="motionTestCard">
-              <div class="motion-visual"><img src="/assets/motion-exploded.webp" alt="Exploded view of the ErgonoMouse controller assembly" /></div>
+              <div class="motion-visual live-motion-visual" aria-label="Live controller motion">
+                <div class="cube-scene" aria-hidden="true">
+                  <div class="motion-cube" id="motionCube"><i class="front">Front</i><i class="back">Back</i><i class="right">R</i><i class="left">L</i><i class="top">Top</i><i class="bottom">Bottom</i></div>
+                  <span class="axis-label axis-x">X</span><span class="axis-label axis-y">Y</span><span class="axis-label axis-z">Z</span>
+                </div>
+                <div class="controller-live" id="controllerLive">
+                  <div class="controller-silhouette"><span class="live-knob" id="liveKnob"></span><div class="live-key-grid" id="liveKeys"></div><span class="live-wheel" id="liveWheel">⋮</span></div>
+                  <small id="motionSummary">Move the controller to see it respond.</small>
+                </div>
+              </div>
               <div class="motion-instructions">
                 <span id="motionCounter">Check 1 of 5</span>
                 <h2 id="motionStageTitle">Check the eight inputs</h2>
@@ -288,8 +297,23 @@
                 <label class="tuning-row"><span><b>Lift / push speed</b><small>Up and down motion</small></span><input id="verticalTune" type="range" min="1" max="9" value="5" list="tuningScale" /><output for="verticalTune">Balanced</output></label>
                 <label class="tuning-row"><span><b>Rotation speed</b><small>Tilt and twist</small></span><input id="rotationTune" type="range" min="1" max="9" value="5" list="tuningScale" /><output for="rotationTune">Balanced</output></label>
                 <label class="tuning-row"><span><b>Center stability</b><small>Resistance to small accidental movement</small></span><input id="stabilityTune" type="range" min="1" max="9" value="5" list="tuningScale" /><output for="stabilityTune">Balanced</output></label>
+                <label class="tuning-row"><span><b>Response curve</b><small>How motion builds from centre to full travel</small></span><select id="curveMode"><option value="linear">Linear</option><option value="precision">Precision</option><option value="adaptive" selected>Adaptive</option></select><output id="curveModeLabel">Adaptive</output></label>
+                <label class="tuning-row curve-adjustment"><span><b>Near-centre precision</b><small>More control for small movements</small></span><input id="curvePrecision" type="range" min="1" max="9" value="5" list="tuningScale" /><output for="curvePrecision">Balanced</output></label>
+                <label class="tuning-row curve-adjustment adaptive-only"><span><b>Full-travel boost</b><small>How quickly motion rises near the edge</small></span><input id="curveBoost" type="range" min="1" max="9" value="5" list="tuningScale" /><output for="curveBoost">Balanced</output></label>
                 <datalist id="tuningScale"><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option><option value="9"></option></datalist>
               </div>
+            </div>
+
+            <div class="tuning-tools">
+              <section class="tuning-tool-card center-tool">
+                <div><b>Resting position</b><small>Leave the controller untouched, then reset its current centre.</small></div>
+                <button id="resetCenter" class="secondary-button" type="button">Reset centre</button>
+              </section>
+              <section class="tuning-tool-card" id="keyMappingCard">
+                <div class="tool-card-heading"><div><b>Key assignments</b><small>Correct swapped wiring or choose which logical key each physical key controls.</small></div><button id="resetKeyMap" class="text-button" type="button">Default order</button></div>
+                <div id="keyMapRows" class="key-map-rows"></div>
+                <button id="saveKeyMap" class="secondary-button" type="button">Save key assignments</button>
+              </section>
             </div>
 
             <div class="screen-actions">

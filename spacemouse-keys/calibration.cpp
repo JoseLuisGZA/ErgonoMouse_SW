@@ -97,6 +97,23 @@ void debugOutput4(int16_t* velocity, uint8_t* keyOut) {
   }
 }
 
+/// @brief Emit one compact, machine-readable frame for the local setup interface.
+void debugOutputLive(int16_t* velocity, uint8_t* keyState, int32_t wheelPosition) {
+  if (!isDebugOutputDue()) return;
+  uint16_t keyMask = 0;
+  for (uint8_t i = 0; i < NUMKEYS && i < 16; i++) {
+    if (keyState[i]) keyMask |= (1U << i);
+  }
+  Serial.print(F("@TEL,"));
+  for (uint8_t i = 0; i < 6; i++) {
+    Serial.print(velocity[i]);
+    Serial.print(',');
+  }
+  Serial.print(keyMask);
+  Serial.print(',');
+  Serial.println(wheelPosition);
+}
+
 /// @brief Report single axis and resulting velocities info side by side for direct reference. Very useful if you need to alter which inputs are used in the arithmetic above.
 /// @param centered pointer to arrays of 8 axis
 /// @param velocity pointer to array of 6 velocities

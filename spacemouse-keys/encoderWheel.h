@@ -5,3 +5,4 @@
 void initEncoderWheel();
 void calcEncoderWheel(int16_t* velocity, bool debugOut, ParamData& par);
 void calcEncoderAsKey(uint8_t keyState[NUMKEYS], bool debugOut);
+int32_t getEncoderPosition();

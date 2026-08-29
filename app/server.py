@@ -68,6 +68,12 @@ class SetupHandler(BaseHTTPRequestHandler):
                 after = 0
             self._json(serial_session.output(max(0, after)))
             return
+        if path == "/api/serial/keymap":
+            try:
+                self._json({"ok": True, "mapping": serial_session.keymap(), **serial_session.status()})
+            except (ValueError, RuntimeError, OSError) as error:
+                self._json({"ok": False, "error": str(error)}, status_code=HTTPStatus.BAD_REQUEST)
+            return
         if path == "/assets/ergonomouse.webp":
             self._file(resource_path("pictures", "ergonomouse.webp"))
             return
@@ -136,8 +142,23 @@ class SetupHandler(BaseHTTPRequestHandler):
                     vertical=body.get("vertical"),
                     rotation=body.get("rotation"),
                     stability=body.get("stability"),
+                    curve_mode=body.get("curveMode", "adaptive"),
+                    curve_precision=body.get("curvePrecision", 5),
+                    curve_boost=body.get("curveBoost", 5),
                 )
                 self._json({"ok": True, "levels": levels, **serial_session.status()})
+                return
+            if path == "/api/serial/reset-center":
+                serial_session.reset_center()
+                self._json({"ok": True, **serial_session.status()})
+                return
+            if path == "/api/serial/keymap":
+                body = self._request_json()
+                if body.get("reset") is True:
+                    mapping = serial_session.reset_keymap(body.get("count"))
+                else:
+                    mapping = serial_session.set_keymap(body.get("mapping"))
+                self._json({"ok": True, "mapping": mapping, **serial_session.status()})
                 return
         except (ValueError, RuntimeError, OSError, TypeError, json.JSONDecodeError) as error:
             self._json({"ok": False, "error": str(error)}, status_code=HTTPStatus.BAD_REQUEST)

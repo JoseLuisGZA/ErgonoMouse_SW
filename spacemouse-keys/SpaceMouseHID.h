@@ -124,8 +124,6 @@ private:
 
     SpaceMouseHIDStates nextState;
 #if (NUMKEYS > 0)
-    // Array with the bitnumbers, which should assign keys to buttons
-    uint8_t bitNumber[NUMHIDKEYS] = BUTTONLIST;
     void prepareKeyBytes(uint8_t *keys, uint8_t *keyData, int debug);
 #endif
     uint8_t countTransZeros = 10; // count how many times, the zero data has been sent

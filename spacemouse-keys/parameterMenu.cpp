@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "parameterMenu.h"
+#include "runtimeSettings.h"
 
 /* possible commands in ProgMode:
 
@@ -151,6 +152,29 @@ int userInput(
         prog.cmd = next;
         Serial.read();
       } //   'i' invalidate magic-number
+      else if (progMode && !cmdDone && next == 'k') {
+        cmdDone = true;
+        prog.cmd = next;
+        Serial.read();
+      } //   'k' assign one physical key to a logical key
+      else if (progMode && !cmdDone && next == 'b') {
+        cmdDone = true;
+        valDone = true;
+        prog.cmd = next;
+        Serial.read();
+      } //   'b' read runtime key order
+      else if (progMode && !cmdDone && next == 'v') {
+        cmdDone = true;
+        valDone = true;
+        prog.cmd = next;
+        Serial.read();
+      } //   'v' save runtime key order
+      else if (progMode && !cmdDone && next == 'u') {
+        cmdDone = true;
+        valDone = true;
+        prog.cmd = next;
+        Serial.read();
+      } //   'u' restore and save default key order
 #endif
       else if (next == 'q' || next == 27) {
         state = 2;
@@ -286,6 +310,29 @@ void executeProgCommand(ParamData &par) {
 
     else if (prog.cmd == 'i') {
       EEPROM.put(BASE_ADDRESS_MAGIC, invalidNum);
+    }
+
+    else if (prog.cmd == 'k') {
+      int encoded = (int)prog.value;
+      uint8_t physicalIndex = encoded / 100;
+      uint8_t logicalIndex = encoded % 100;
+      if (encoded < 0 || !setRuntimeKeyOrder(physicalIndex, logicalIndex)) {
+        prog.retval = PE_INVALID_VALUE;
+      }
+    }
+
+    else if (prog.cmd == 'b') {
+      printRuntimeKeyOrder();
+      return;
+    }
+
+    else if (prog.cmd == 'v') {
+      if (!saveRuntimeKeyOrder()) prog.retval = PE_INVALID_VALUE;
+    }
+
+    else if (prog.cmd == 'u') {
+      resetRuntimeKeyOrder();
+      saveRuntimeKeyOrder();
     }
   }
 

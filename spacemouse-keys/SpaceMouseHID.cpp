@@ -8,6 +8,8 @@ This code is based on
 https://forum.arduino.cc/t/solved-unable-to-receive-hid-reports-from-computer-using-pluggableusb/596793
 */
 
+#include "runtimeSettings.h"
+
 #include <Arduino.h>
 #include "config.h"
 #include "SpaceMouseHID.h"
@@ -320,8 +322,7 @@ bool SpaceMouseHID_::jiggleValues(uint8_t val[12], bool lastBit) {
 
 #if (NUMKEYS > 0)
 // Takes the data in keys and sort them into the bits of keyData
-// Which key from keyData should belong to which byte is defined in bitNumber = BUTTONLIST see
-// config.h
+// Physical keys are translated through the persistent runtime order, then through BUTTONLIST.
 void SpaceMouseHID_::prepareKeyBytes(uint8_t *keys, uint8_t *keyData, int debug) {
   for (int i = 0; i < 4; i++) {
     // init or empty this array
@@ -329,6 +330,7 @@ void SpaceMouseHID_::prepareKeyBytes(uint8_t *keys, uint8_t *keyData, int debug)
   }
 
   for (int i = 0; i < NUMHIDKEYS; i++) {
+    uint8_t bitNumber = getRuntimeButtonCode(i);
     // check for every key if it is pressed
     if (keys[i]) {
       // set the according bit in the data bytes
@@ -336,16 +338,16 @@ void SpaceMouseHID_::prepareKeyBytes(uint8_t *keys, uint8_t *keyData, int debug)
       // bit no.:  bitNumber[i] modulo 8
       // Multiple pressed buttons can occupy the same report byte. Preserve bits already set by
       // earlier buttons instead of replacing the whole byte.
-      keyData[(bitNumber[i] / 8)] |= (1 << (bitNumber[i] % 8));
+      keyData[(bitNumber / 8)] |= (1 << (bitNumber % 8));
       if (debug == 8) {
         // debug the key board outputs
         Serial.print("bitnumber: ");
-        Serial.print(bitNumber[i]);
+        Serial.print(bitNumber);
         Serial.print(" -> keyData[");
-        Serial.print((bitNumber[i] / 8));
+        Serial.print((bitNumber / 8));
         Serial.print("] = ");
         Serial.print("0x");
-        Serial.println(keyData[(bitNumber[i] / 8)], HEX);
+        Serial.println(keyData[(bitNumber / 8)], HEX);
       }
     }
   }

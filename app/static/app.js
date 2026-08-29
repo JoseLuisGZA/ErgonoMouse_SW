@@ -51,6 +51,10 @@ const state = {
   tuningBackScreen: 5,
   autoConnecting: false,
   autoConnectAttempted: false,
+  telemetry: { translation: [0, 0, 0], rotation: [0, 0, 0], keys: [], wheel: 0 },
+  previousWheel: 0,
+  wheelAngle: 0,
+  keyMapping: [],
   inspectMode: new URLSearchParams(window.location.search).has("inspect"),
 };
 
@@ -237,6 +241,7 @@ function updateVariantUI(markDirty = true) {
   $("#modelContinue").disabled = false;
   updateReview();
   setupMotionStages();
+  renderKeyMapping();
   if (markDirty) {
     state.configured = false;
     state.installed = false;
@@ -244,6 +249,47 @@ function updateVariantUI(markDirty = true) {
     resetInstallUI();
     updateActionAvailability();
   }
+}
+
+function hidKeyCount(settings = settingsFromForm()) {
+  const base = settings.base_variant === "six_keys" ? 6 : 0;
+  const top = ["buttons", "full"].includes(settings.control_variant) && settings.controller_buttons_mode === "hid" ? 2 : 0;
+  return base + top;
+}
+
+function renderLiveController() {
+  const settings = settingsFromForm();
+  const totalKeys = (settings.base_variant === "six_keys" ? 6 : 0) + (["buttons", "full"].includes(settings.control_variant) ? 2 : 0);
+  $("#liveKeys").innerHTML = Array.from({ length: totalKeys }, (_, index) => `<i data-live-key="${index}">${index + 1}</i>`).join("");
+  $(".controller-silhouette").classList.toggle("no-wheel", !["wheel", "full"].includes(settings.control_variant));
+}
+
+function updateLiveVisualization(telemetry) {
+  if (!telemetry) return;
+  state.telemetry = telemetry;
+  const translation = telemetry.translation || [0, 0, 0];
+  const rotation = telemetry.rotation || [0, 0, 0];
+  const clamp = (value, limit) => Math.max(-limit, Math.min(limit, Number(value) || 0));
+  const tx = clamp(translation[0] / 350, 1);
+  const ty = clamp(translation[1] / 350, 1);
+  const tz = clamp(translation[2] / 350, 1);
+  const rx = clamp(rotation[0] / 350, 1);
+  const ry = clamp(rotation[1] / 350, 1);
+  const rz = clamp(rotation[2] / 350, 1);
+  $("#motionCube").style.transform = `translate3d(${tx * 25}px, ${-ty * 25}px, ${tz * 22}px) rotateX(${-18 + rx * 36}deg) rotateY(${28 + ry * 42}deg) rotateZ(${rz * 38}deg)`;
+  $("#liveKnob").style.transform = `translate(${tx * 7}px, ${-ty * 7 - tz * 4}px) rotateX(${rx * 9}deg) rotateY(${ry * 9}deg) rotateZ(${rz * 10}deg)`;
+  const pressed = new Set(telemetry.keys || []);
+  $$('[data-live-key]').forEach((key) => key.classList.toggle("pressed", pressed.has(Number(key.dataset.liveKey))));
+  const wheel = Number(telemetry.wheel) || 0;
+  if (wheel !== state.previousWheel) state.wheelAngle += Math.sign(wheel - state.previousWheel) * 24;
+  state.previousWheel = wheel;
+  $("#liveWheel").style.transform = `rotate(${state.wheelAngle}deg)`;
+  const values = [...translation, ...rotation].map((value) => Math.abs(Number(value) || 0));
+  const maxValue = Math.max(...values);
+  const activeKeys = pressed.size;
+  $("#motionSummary").textContent = activeKeys
+    ? `${activeKeys} key${activeKeys === 1 ? "" : "s"} pressed`
+    : maxValue > 8 ? "Live 6DOF motion detected" : "Controller resting at centre";
 }
 
 function updateDependentModelOptions(isFree) {
@@ -380,6 +426,7 @@ function setupMotionStages() {
   const dots = $("#stageDots");
   dots.innerHTML = motionStages.map((_, index) => `<button type="button" aria-label="Check ${index + 1}" data-stage-dot="${index}"></button>`).join("");
   renderMotionStage();
+  renderLiveController();
 }
 
 function renderMotionStage() {
@@ -434,6 +481,7 @@ async function connectCalibration(showErrors = true) {
     state.serialSequence = 0;
     window.clearInterval(state.serialTimer);
     state.serialTimer = window.setInterval(pollSerialOutput, 450);
+    await request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: "40" }) });
     renderMotionStage();
     return true;
   } catch (error) {
@@ -487,6 +535,7 @@ async function runMotionStage() {
   if (state.motionStageRunning) {
     state.motionStage += 1;
     state.motionStageRunning = false;
+    request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: "40" }) }).catch(() => {});
     renderMotionStage();
     return;
   }
@@ -513,6 +562,7 @@ async function pollSerialOutput() {
   try {
     const result = await request(`/api/serial/output?after=${state.serialSequence}`);
     state.serialSequence = result.sequence;
+    updateLiveVisualization(result.telemetry);
     if (result.lines.length) {
       const output = $("#calibrationOutput");
       const newText = result.lines.map((line) => line.text).join("\n");
@@ -550,7 +600,9 @@ function setLiveDataExpanded(expanded) {
 
 function continueToTuning() {
   state.tuningBackScreen = 5;
+  request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: "40" }) }).catch(() => {});
   showScreen(6);
+  loadKeyMapping();
 }
 
 async function enterDirectTuning(returnScreen) {
@@ -562,6 +614,7 @@ async function enterDirectTuning(returnScreen) {
   }
   if (!state.connectedForCalibration && !await connectCalibration()) return;
   showScreen(6);
+  await loadKeyMapping();
 }
 
 async function leaveTuning() {
@@ -579,18 +632,103 @@ function tuningPayload() {
     vertical: Number($("#verticalTune").value),
     rotation: Number($("#rotationTune").value),
     stability: Number($("#stabilityTune").value),
+    curveMode: $("#curveMode").value,
+    curvePrecision: Number($("#curvePrecision").value),
+    curveBoost: Number($("#curveBoost").value),
   };
 }
 
 function renderTuningLabels() {
-  [["translationTune", tuningLabels], ["verticalTune", tuningLabels], ["rotationTune", tuningLabels], ["stabilityTune", stabilityLabels]].forEach(([id, labels]) => {
+  [["translationTune", tuningLabels], ["verticalTune", tuningLabels], ["rotationTune", tuningLabels], ["stabilityTune", stabilityLabels], ["curvePrecision", stabilityLabels], ["curveBoost", tuningLabels]].forEach(([id, labels]) => {
     $(`output[for="${id}"]`).textContent = labels[Number($(`#${id}`).value)];
   });
+  const curveMode = $("#curveMode").value;
+  $("#curveModeLabel").textContent = $("#curveMode").selectedOptions[0].textContent;
+  $$(".curve-adjustment").forEach((row) => { row.hidden = curveMode === "linear"; });
+  $$(".adaptive-only").forEach((row) => { row.hidden = curveMode !== "adaptive"; });
+}
+
+function renderKeyMapping(mapping = state.keyMapping) {
+  const count = hidKeyCount();
+  $("#keyMappingCard").hidden = count === 0;
+  if (!count) return;
+  if (!Array.isArray(mapping) || mapping.length !== count) mapping = Array.from({ length: count }, (_, index) => index + 1);
+  state.keyMapping = mapping;
+  const options = Array.from({ length: count }, (_, index) => `<option value="${index + 1}">Logical Key ${index + 1}</option>`).join("");
+  $("#keyMapRows").innerHTML = mapping.map((logical, physical) => `<label class="key-map-row"><span>Physical Key ${physical + 1}</span><select data-key-map="${physical}">${options}</select></label>`).join("");
+  $$('[data-key-map]').forEach((select, index) => {
+    select.value = String(mapping[index]);
+    select.disabled = !state.connectedForCalibration;
+  });
+}
+
+async function loadKeyMapping() {
+  const count = hidKeyCount();
+  renderKeyMapping();
+  if (!count || !state.connectedForCalibration) return;
+  try {
+    const result = await request("/api/serial/keymap");
+    renderKeyMapping(result.mapping);
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
+async function saveKeyMapping() {
+  const mapping = $$('[data-key-map]').map((select) => Number(select.value));
+  if (new Set(mapping).size !== mapping.length) {
+    toast("Assign each logical key exactly once.", true);
+    return;
+  }
+  const button = $("#saveKeyMap");
+  button.disabled = true;
+  try {
+    const result = await request("/api/serial/keymap", { method: "POST", body: JSON.stringify({ mapping }) });
+    renderKeyMapping(result.mapping);
+    toast("Key assignments saved to the controller.");
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function resetKeyMapping() {
+  const count = hidKeyCount();
+  try {
+    const result = await request("/api/serial/keymap", { method: "POST", body: JSON.stringify({ reset: true, count }) });
+    renderKeyMapping(result.mapping);
+    toast("Default key order restored.");
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
+async function resetCenter() {
+  const button = $("#resetCenter");
+  button.disabled = true;
+  button.textContent = "Keep still…";
+  $("#tuningStatus").textContent = "Measuring the resting position…";
+  try {
+    await request("/api/serial/reset-center", { method: "POST", body: "{}" });
+    await request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: "40" }) });
+    $("#tuningStatus").textContent = "Centre reset successfully";
+    toast("Resting position reset.");
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Reset centre";
+  }
 }
 
 function updateTuningAvailability() {
   const connected = state.connectedForCalibration;
   $("#finishTuning").disabled = !connected;
+  $("#resetCenter").disabled = !connected;
+  $("#saveKeyMap").disabled = !connected;
+  $("#resetKeyMap").disabled = !connected;
+  $$(".tuning-row input, .tuning-row select, [data-key-map]").forEach((control) => { control.disabled = !connected; });
   $("#tuningStatus").textContent = connected
     ? "Controller connected — adjustments apply live"
     : "Connect the controller to adjust it live";
@@ -640,7 +778,8 @@ function bindEvents() {
   });
   $("#finishTuning").addEventListener("click", finishTuning);
   $("#recommendedTuning").addEventListener("click", async () => {
-    ["translationTune", "verticalTune", "rotationTune", "stabilityTune"].forEach((id) => { $(`#${id}`).value = "5"; });
+    ["translationTune", "verticalTune", "rotationTune", "stabilityTune", "curvePrecision", "curveBoost"].forEach((id) => { $(`#${id}`).value = "5"; });
+    $("#curveMode").value = "adaptive";
     renderTuningLabels();
     try { await saveTuning(); } catch (error) { toast(error.message, true); }
   });
@@ -648,6 +787,10 @@ function bindEvents() {
     input.addEventListener("input", () => { renderTuningLabels(); $("#tuningStatus").textContent = "Release to apply"; });
     input.addEventListener("change", async () => { try { await saveTuning(); } catch (error) { toast(error.message, true); } });
   });
+  $("#curveMode").addEventListener("change", async () => { renderTuningLabels(); try { await saveTuning(); } catch (error) { toast(error.message, true); } });
+  $("#resetCenter").addEventListener("click", resetCenter);
+  $("#saveKeyMap").addEventListener("click", saveKeyMapping);
+  $("#resetKeyMap").addEventListener("click", resetKeyMapping);
 
   $$('input[name="edition"], input[name="controllerStyleChoice"], #handedness, #baseVariant, #controlVariant, #buttonMode, #wheelAxis, #exclusiveMode')
     .forEach((element) => element.addEventListener("change", () => updateVariantUI(true)));

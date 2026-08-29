@@ -9,7 +9,14 @@ from typing import Any
 from .tooling import serial_ports
 
 
-ALLOWED_MODES = {"0", "1", "4", "6", "8", "9", "11", "20", "30", "99", "ESC"}
+ALLOWED_MODES = {"0", "1", "4", "6", "8", "9", "11", "20", "30", "40", "99", "ESC"}
+
+CURVE_MODES = {"linear": 0, "precision": 1, "adaptive": 3}
+CURVE_PRECISION = {1: 1.0, 2: 1.04, 3: 1.08, 4: 1.12, 5: 1.15, 6: 1.3, 7: 1.55, 8: 2.0, 9: 3.0}
+CURVE_BOOST = {1: 0.65, 2: 0.8, 3: 0.95, 4: 1.05, 5: 1.15, 6: 1.25, 7: 1.33, 8: 1.4, 9: 1.46}
+TELEMETRY_PATTERN = re.compile(
+    r"^@TEL,(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(\d+),(-?\d+)$"
+)
 
 MOVEMENT_SENSITIVITY = {1: 1.6, 2: 1.42, 3: 1.25, 4: 1.12, 5: 1.0, 6: 0.9, 7: 0.8, 8: 0.72, 9: 0.65}
 VERTICAL_SENSITIVITY = {
@@ -35,6 +42,13 @@ class SerialSession:
         self._lock = threading.Lock()
         self._lines: deque[dict[str, Any]] = deque(maxlen=800)
         self._sequence = 0
+        self._telemetry = {
+            "translation": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "keyMask": 0,
+            "keys": [],
+            "wheel": 0,
+        }
         self.port: str | None = None
 
     @property
@@ -101,13 +115,27 @@ class SerialSession:
             raise RuntimeError("Connect to the ErgonoMouse before sending device input")
         self._connection.write(payload.encode("ascii"))
 
-    def tune(self, movement: int, vertical: int, rotation: int, stability: int) -> dict[str, int]:
+    def tune(
+        self,
+        movement: int,
+        vertical: int,
+        rotation: int,
+        stability: int,
+        curve_mode: str = "adaptive",
+        curve_precision: int = 5,
+        curve_boost: int = 5,
+    ) -> dict[str, Any]:
         levels = {
             "movement": self._tuning_level("movement", movement),
             "vertical": self._tuning_level("vertical", vertical),
             "rotation": self._tuning_level("rotation", rotation),
             "stability": self._tuning_level("stability", stability),
+            "curvePrecision": self._tuning_level("curve precision", curve_precision),
+            "curveBoost": self._tuning_level("curve boost", curve_boost),
         }
+        if curve_mode not in CURVE_MODES:
+            raise ValueError("curve mode must be linear, precision, or adaptive")
+        levels["curveMode"] = curve_mode
         if not self.connected:
             raise RuntimeError("Connect to the ErgonoMouse before applying tuning")
 
@@ -123,12 +151,65 @@ class SerialSession:
             (10, rotation_value),
             (11, rotation_value),
             (12, rotation_value),
+            (13, CURVE_MODES[curve_mode]),
+            (14, CURVE_PRECISION[levels["curvePrecision"]]),
+            (15, CURVE_BOOST[levels["curveBoost"]]),
         )
         for index, value in parameters:
             self._program_command(f">p{index}")
             self._program_command(f">w{value}")
         self._program_command(">s")
         return levels
+
+    def reset_center(self) -> None:
+        self.command("11")
+        time.sleep(2.4)
+
+    def set_keymap(self, mapping: list[int]) -> list[int]:
+        if not self.connected:
+            raise RuntimeError("Connect to the ErgonoMouse before changing key assignments")
+        if not isinstance(mapping, list) or not 1 <= len(mapping) <= 8:
+            raise ValueError("key mapping must contain between one and eight keys")
+        if any(isinstance(value, bool) or not isinstance(value, int) for value in mapping):
+            raise ValueError("key mapping values must be integers")
+        if sorted(mapping) != list(range(1, len(mapping) + 1)):
+            raise ValueError("each logical key number must be assigned exactly once")
+        for physical_index, logical_number in enumerate(mapping):
+            self._program_command(f">k{physical_index * 100 + logical_number - 1}")
+        self._program_command(">v")
+        return mapping
+
+    def keymap(self) -> list[int]:
+        if not self.connected:
+            raise RuntimeError("Connect to the ErgonoMouse before reading key assignments")
+        with self._lock:
+            after = self._sequence
+        self._program_command(">b")
+        deadline = time.monotonic() + 1.0
+        while time.monotonic() < deadline:
+            with self._lock:
+                replies = [
+                    entry["text"] for entry in self._lines
+                    if entry["sequence"] > after and entry["text"].startswith("<b")
+                ]
+            if replies:
+                payload = replies[-1][2:]
+                if not payload:
+                    return []
+                mapping = [int(value) for value in payload.split(",")]
+                if sorted(mapping) != list(range(1, len(mapping) + 1)):
+                    raise RuntimeError("The controller returned an invalid key assignment")
+                return mapping
+            time.sleep(0.02)
+        raise RuntimeError("The controller did not return its key assignments")
+
+    def reset_keymap(self, count: int) -> list[int]:
+        if isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= 8:
+            raise ValueError("key count must be an integer from 1 to 8")
+        if not self.connected:
+            raise RuntimeError("Connect to the ErgonoMouse before changing key assignments")
+        self._program_command(">u")
+        return list(range(1, count + 1))
 
     @staticmethod
     def _tuning_level(name: str, value: int) -> int:
@@ -145,7 +226,8 @@ class SerialSession:
         with self._lock:
             lines = [entry for entry in self._lines if entry["sequence"] > after]
             sequence = self._sequence
-        return {"lines": lines, "sequence": sequence, **self.status()}
+            telemetry = dict(self._telemetry)
+        return {"lines": lines, "sequence": sequence, "telemetry": telemetry, **self.status()}
 
     def status(self) -> dict[str, Any]:
         return {
@@ -177,7 +259,18 @@ class SerialSession:
             self._append(buffer.decode("utf-8", errors="replace"))
 
     def _append(self, text: str, kind: str = "data") -> None:
+        match = TELEMETRY_PATTERN.fullmatch(text.strip())
         with self._lock:
+            if match:
+                values = [int(value) for value in match.groups()]
+                key_mask = values[6]
+                self._telemetry = {
+                    "translation": values[0:3],
+                    "rotation": values[3:6],
+                    "keyMask": key_mask,
+                    "keys": [index for index in range(16) if key_mask & (1 << index)],
+                    "wheel": values[7],
+                }
             self._sequence += 1
             self._lines.append(
                 {"sequence": self._sequence, "time": round(time.time(), 3), "kind": kind, "text": text}

@@ -66,7 +66,14 @@ class ReleaseTests(unittest.TestCase):
     def test_hid_button_chords_preserve_existing_report_bits(self) -> None:
         project = Path(__file__).resolve().parents[1]
         source = (project / "spacemouse-keys" / "SpaceMouseHID.cpp").read_text(encoding="utf-8")
-        self.assertIn("keyData[(bitNumber[i] / 8)] |=", source)
+        self.assertIn("keyData[(bitNumber / 8)] |=", source)
+
+    def test_runtime_key_mapping_is_versioned_and_separate_from_parameter_storage(self) -> None:
+        project = Path(__file__).resolve().parents[1]
+        source = (project / "spacemouse-keys" / "runtimeSettings.cpp").read_text(encoding="utf-8")
+        self.assertIn("KEY_ORDER_VERSION = 1", source)
+        self.assertIn("BASE_ADDRESS_PAR + sizeof(ParamStorage)", source)
+        self.assertIn("recordIsValid", source)
 
 
 if __name__ == "__main__":

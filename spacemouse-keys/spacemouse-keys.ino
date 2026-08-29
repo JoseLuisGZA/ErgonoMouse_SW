@@ -13,6 +13,7 @@
 // it as config.h
 #include "config.h"
 #include "parameterMenu.h"
+#include "runtimeSettings.h"
 
 // Include inbuilt Arduino HID library by NicoHood: https://github.com/NicoHood/HID
 #include "HID.h"
@@ -122,6 +123,7 @@ void setup() {
 #if PARAM_IN_EEPROM > 0
   getParametersFromEEPROM(par);
 #endif
+  loadRuntimeKeyOrder();
 
 // setup the keys e.g. to internal pull-ups
 #if NUMKEYS > 0
@@ -219,6 +221,7 @@ void loop() {
       Serial.println(F("  7 loop-frequency-test"));
       Serial.println(F("  8 key-test, button-codes to send"));
       Serial.println(F("  9 encoder wheel-test"));
+      Serial.println(F(" 40 setup interface live telemetry"));
 #if PARAM_IN_EEPROM > 0
       Serial.println(F(" 30 parameters (load, save, edit, view)"));
 #endif
@@ -372,6 +375,14 @@ void loop() {
   // classics joysticks
   if (par.values->exclusiveMode == 1) {
     exclusiveMode(velocity, par.values->exclusiveHysteresis);
+  }
+
+  if (debug == 40) {
+    int32_t wheelPosition = 0;
+#if ROTARY_AXIS > 0 or ROTARY_KEYS > 0
+    wheelPosition = getEncoderPosition();
+#endif
+    debugOutputLive(velocity, keyState, wheelPosition);
   }
 
   // report velocity and keys after Switch or ExclusiveMode
