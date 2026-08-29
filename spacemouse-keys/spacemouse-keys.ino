@@ -377,7 +377,7 @@ void loop() {
     exclusiveMode(velocity, par.values->exclusiveHysteresis);
   }
 
-  if (debug == 40) {
+  if (debug == 40 || isSetupTelemetryEnabled()) {
     int32_t wheelPosition = 0;
 #if ROTARY_AXIS > 0 or ROTARY_KEYS > 0
     wheelPosition = getEncoderPosition();

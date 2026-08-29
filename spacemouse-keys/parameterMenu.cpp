@@ -175,6 +175,11 @@ int userInput(
         prog.cmd = next;
         Serial.read();
       } //   'u' restore and save default key order
+      else if (progMode && !cmdDone && next == 'e') {
+        cmdDone = true;
+        prog.cmd = next;
+        Serial.read();
+      } //   'e' enable/disable continuous setup telemetry
 #endif
       else if (next == 'q' || next == 27) {
         state = 2;
@@ -333,6 +338,14 @@ void executeProgCommand(ParamData &par) {
     else if (prog.cmd == 'u') {
       resetRuntimeKeyOrder();
       saveRuntimeKeyOrder();
+    }
+
+    else if (prog.cmd == 'e') {
+      if (prog.value != 0 && prog.value != 1) {
+        prog.retval = PE_INVALID_VALUE;
+      } else {
+        setSetupTelemetryEnabled(prog.value == 1);
+      }
     }
   }
 

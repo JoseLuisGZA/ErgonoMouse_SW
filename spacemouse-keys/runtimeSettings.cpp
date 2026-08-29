@@ -23,6 +23,7 @@ struct RuntimeKeyOrderRecord {
 
 uint8_t runtimeKeyOrder[MAX_RUNTIME_KEYS];
 uint8_t pendingKeyOrder[MAX_RUNTIME_KEYS];
+bool setupTelemetryEnabled = false;
 
 #if NUMHIDKEYS > 0
 const uint8_t defaultButtonCodes[NUMHIDKEYS] = BUTTONLIST;
@@ -123,4 +124,12 @@ void printRuntimeKeyOrder() {
     Serial.print(runtimeKeyOrder[i] + 1);
   }
   Serial.println();
+}
+
+void setSetupTelemetryEnabled(bool enabled) {
+  setupTelemetryEnabled = enabled;
+}
+
+bool isSetupTelemetryEnabled() {
+  return setupTelemetryEnabled;
 }

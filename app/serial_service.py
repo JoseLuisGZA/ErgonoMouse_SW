@@ -48,7 +48,12 @@ class SerialSession:
             "keyMask": 0,
             "keys": [],
             "wheel": 0,
+            "wheelDirection": 0,
         }
+        self._last_wheel_position: int | None = None
+        self._wheel_direction = 0
+        self._wheel_direction_until = 0.0
+        self._telemetry_enabled = False
         self.port: str | None = None
 
     @property
@@ -77,11 +82,18 @@ class SerialSession:
         self._stop.clear()
         self._reader = threading.Thread(target=self._read_loop, name="ergonomouse-serial", daemon=True)
         self._reader.start()
+        self._telemetry_enabled = False
         return self.status()
 
     def close(self) -> None:
         self._stop.set()
         connection = self._connection
+        if connection and self._telemetry_enabled:
+            try:
+                connection.write(b">e0\r\n")
+                connection.flush()
+            except Exception:
+                pass
         self._connection = None
         self.port = None
         if connection:
@@ -93,6 +105,7 @@ class SerialSession:
         if reader and reader is not threading.current_thread():
             reader.join(timeout=1)
         self._reader = None
+        self._telemetry_enabled = False
 
     def command(self, mode: str) -> None:
         normalized = mode.upper()
@@ -100,6 +113,9 @@ class SerialSession:
             raise ValueError("Unsupported calibration command")
         if not self.connected:
             raise RuntimeError("Connect to the ErgonoMouse before starting calibration")
+        if normalized != "ESC" and not self._telemetry_enabled:
+            self._program_command(">e1")
+            self._telemetry_enabled = True
         payload = "\x1b" if normalized == "ESC" else f"{normalized}\r\n"
         self._connection.write(payload.encode("ascii"))
 
@@ -227,6 +243,8 @@ class SerialSession:
             lines = [entry for entry in self._lines if entry["sequence"] > after]
             sequence = self._sequence
             telemetry = dict(self._telemetry)
+            if time.monotonic() >= self._wheel_direction_until:
+                telemetry["wheelDirection"] = 0
         return {"lines": lines, "sequence": sequence, "telemetry": telemetry, **self.status()}
 
     def status(self) -> dict[str, Any]:
@@ -264,12 +282,18 @@ class SerialSession:
             if match:
                 values = [int(value) for value in match.groups()]
                 key_mask = values[6]
+                wheel_position = values[7]
+                if self._last_wheel_position is not None and wheel_position != self._last_wheel_position:
+                    self._wheel_direction = 1 if wheel_position > self._last_wheel_position else -1
+                    self._wheel_direction_until = time.monotonic() + 0.16
+                self._last_wheel_position = wheel_position
                 self._telemetry = {
                     "translation": values[0:3],
                     "rotation": values[3:6],
                     "keyMask": key_mask,
                     "keys": [index for index in range(16) if key_mask & (1 << index)],
-                    "wheel": values[7],
+                    "wheel": wheel_position,
+                    "wheelDirection": self._wheel_direction,
                 }
             self._sequence += 1
             self._lines.append(

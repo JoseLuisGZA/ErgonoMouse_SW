@@ -25,6 +25,17 @@ class SerialServiceTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "Connect"):
                 session.command(mode)
 
+    def test_continuous_telemetry_is_enabled_once_across_diagnostic_modes(self) -> None:
+        session = SerialSession()
+        connection = Mock(is_open=True)
+        session._connection = connection
+        with patch("app.serial_service.time.sleep"):
+            session.command("1")
+            session.command("20")
+        payload = b"".join(call.args[0] for call in connection.write.call_args_list).decode("ascii")
+        self.assertEqual(payload.count(">e1\r\n"), 1)
+        self.assertTrue(payload.endswith("1\r\n20\r\n"))
+
     def test_guided_tuning_sends_only_bounded_program_commands(self) -> None:
         session = SerialSession()
         connection = Mock(is_open=True)
@@ -74,6 +85,14 @@ class SerialServiceTests(unittest.TestCase):
         self.assertEqual(result["telemetry"]["rotation"], [40, -50, 60])
         self.assertEqual(result["telemetry"]["keys"], [0, 2])
         self.assertEqual(result["telemetry"]["wheel"], 18)
+
+    def test_wheel_telemetry_reports_direction_without_rotating_a_visual(self) -> None:
+        session = SerialSession()
+        session._append("@TEL,0,0,0,0,0,0,0,18")
+        session._append("@TEL,0,0,0,0,0,0,0,19")
+        self.assertEqual(session.output()["telemetry"]["wheelDirection"], 1)
+        session._append("@TEL,0,0,0,0,0,0,0,17")
+        self.assertEqual(session.output()["telemetry"]["wheelDirection"], -1)
 
     def test_key_mapping_is_a_bounded_permutation_and_persisted(self) -> None:
         session = SerialSession()

@@ -248,11 +248,17 @@
             <div class="motion-test-card" id="motionTestCard">
               <div class="motion-visual live-motion-visual" aria-label="Live controller motion">
                 <div class="cube-scene" aria-hidden="true">
-                  <div class="motion-cube" id="motionCube"><i class="front">Front</i><i class="back">Back</i><i class="right">R</i><i class="left">L</i><i class="top">Top</i><i class="bottom">Bottom</i></div>
+                  <div class="motion-cube-position" id="motionCubePosition"><div class="motion-cube" id="motionCube"><i class="front">Front</i><i class="back">Back</i><i class="right">R</i><i class="left">L</i><i class="top">Top</i><i class="bottom">Bottom</i></div></div>
                   <span class="axis-label axis-x">X</span><span class="axis-label axis-y">Y</span><span class="axis-label axis-z">Z</span>
                 </div>
                 <div class="controller-live" id="controllerLive">
-                  <div class="controller-silhouette"><span class="live-knob" id="liveKnob"></span><div class="live-key-grid" id="liveKeys"></div><span class="live-wheel" id="liveWheel">⋮</span></div>
+                  <div class="controller-silhouette">
+                    <div class="live-key-bank live-top-keys" id="liveTopKeys"></div>
+                    <span class="live-knob" id="liveKnob"></span>
+                    <div class="live-key-bank live-bottom-keys" id="liveBottomKeys"></div>
+                    <div class="live-key-bank live-side-keys" id="liveSideKeys"></div>
+                    <div class="live-wheel" id="liveWheel"><span id="liveWheelUp" aria-label="Wheel up">▲</span><span id="liveWheelDown" aria-label="Wheel down">▼</span></div>
+                  </div>
                   <small id="motionSummary">Move the controller to see it respond.</small>
                 </div>
               </div>
@@ -286,7 +292,7 @@
             <div class="screen-copy compact-copy">
               <p class="step-kicker">Step 6 of 7</p>
               <h1 id="tuningTitle">Tune the feel.</h1>
-              <p class="lead">Try the controller as you adjust it. These simple controls update the device without asking for technical values.</p>
+              <p class="lead">Try the controller as you adjust the settings with these simple controls.</p>
             </div>
 
             <div class="tuning-layout">
@@ -312,7 +318,7 @@
               <section class="tuning-tool-card" id="keyMappingCard">
                 <div class="tool-card-heading"><div><b>Key assignments</b><small>Correct swapped wiring or choose which logical key each physical key controls.</small></div><button id="resetKeyMap" class="text-button" type="button">Default order</button></div>
                 <div id="keyMapRows" class="key-map-rows"></div>
-                <button id="saveKeyMap" class="secondary-button" type="button">Save key assignments</button>
+                <small class="key-map-save-note">Assignments are saved with “Save and finish”.</small>
               </section>
             </div>
 

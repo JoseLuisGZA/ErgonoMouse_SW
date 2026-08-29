@@ -4,6 +4,14 @@ All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomou
 
 ## Unreleased
 
+## 4.4.0-rc.2 — Continuous motion feedback and layout refinement
+
+- Kept structured 6DOF, key and wheel telemetry active during every diagnostic check and reduced the end-to-end update interval for immediate visual feedback.
+- Separated cube translation from rotation, corrected the displayed axis mapping and replaced transparent faces with a solid orientation model.
+- Rebuilt the controller preview around three upper keys, three lower keys, two left-side keys and a split, non-rotating wheel indicator, while hiding controls absent from the configured build.
+- Balanced the Test Motion card into equal visualization and instruction columns and compacted Tune controls, key assignments and centre reset.
+- Saved validated key assignments with the main “Save and finish” action instead of requiring a separate save button.
+
 ## 4.4.0-rc.1 — Live visualization and runtime controls
 
 - Replaced raw six-axis numbers with a live 3D cube plus configuration-aware key and wheel feedback, while retaining numeric telemetry under technical details.

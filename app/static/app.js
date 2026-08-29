@@ -42,6 +42,7 @@ const state = {
   completed: false,
   serialSequence: 0,
   serialTimer: null,
+  serialPollInFlight: false,
   statusTimer: null,
   installProgressTimer: null,
   motionStage: 0,
@@ -52,8 +53,6 @@ const state = {
   autoConnecting: false,
   autoConnectAttempted: false,
   telemetry: { translation: [0, 0, 0], rotation: [0, 0, 0], keys: [], wheel: 0 },
-  previousWheel: 0,
-  wheelAngle: 0,
   keyMapping: [],
   inspectMode: new URLSearchParams(window.location.search).has("inspect"),
 };
@@ -259,8 +258,13 @@ function hidKeyCount(settings = settingsFromForm()) {
 
 function renderLiveController() {
   const settings = settingsFromForm();
-  const totalKeys = (settings.base_variant === "six_keys" ? 6 : 0) + (["buttons", "full"].includes(settings.control_variant) ? 2 : 0);
-  $("#liveKeys").innerHTML = Array.from({ length: totalKeys }, (_, index) => `<i data-live-key="${index}">${index + 1}</i>`).join("");
+  const hasBaseKeys = settings.base_variant === "six_keys";
+  const hasSideKeys = ["buttons", "full"].includes(settings.control_variant);
+  const key = (index) => `<i data-live-key="${index}">${index + 1}</i>`;
+  $("#liveTopKeys").innerHTML = hasBaseKeys ? [0, 1, 2].map(key).join("") : "";
+  $("#liveBottomKeys").innerHTML = hasBaseKeys ? [3, 4, 5].map(key).join("") : "";
+  const sideOffset = hasBaseKeys ? 6 : 0;
+  $("#liveSideKeys").innerHTML = hasSideKeys ? [sideOffset, sideOffset + 1].map(key).join("") : "";
   $(".controller-silhouette").classList.toggle("no-wheel", !["wheel", "full"].includes(settings.control_variant));
 }
 
@@ -276,14 +280,16 @@ function updateLiveVisualization(telemetry) {
   const rx = clamp(rotation[0] / 350, 1);
   const ry = clamp(rotation[1] / 350, 1);
   const rz = clamp(rotation[2] / 350, 1);
-  $("#motionCube").style.transform = `translate3d(${tx * 25}px, ${-ty * 25}px, ${tz * 22}px) rotateX(${-18 + rx * 36}deg) rotateY(${28 + ry * 42}deg) rotateZ(${rz * 38}deg)`;
-  $("#liveKnob").style.transform = `translate(${tx * 7}px, ${-ty * 7 - tz * 4}px) rotateX(${rx * 9}deg) rotateY(${ry * 9}deg) rotateZ(${rz * 10}deg)`;
+  // Translation and rotation use separate elements so one motion cannot be
+  // visually interpreted as the other. Firmware order is TX, TY, TZ, RX, RY, RZ.
+  $("#motionCubePosition").style.transform = `translate3d(${tx * 27}px, ${-tz * 25}px, ${ty * 30}px) scale(${1 + ty * 0.08})`;
+  $("#motionCube").style.transform = `rotateX(${-18 + rx * 38}deg) rotateY(${28 + ry * 42}deg) rotateZ(${rz * 40}deg)`;
+  $("#liveKnob").style.transform = `translate(${tx * 7}px, ${-tz * 6}px) rotateX(${rx * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rz * 8}deg)`;
   const pressed = new Set(telemetry.keys || []);
   $$('[data-live-key]').forEach((key) => key.classList.toggle("pressed", pressed.has(Number(key.dataset.liveKey))));
-  const wheel = Number(telemetry.wheel) || 0;
-  if (wheel !== state.previousWheel) state.wheelAngle += Math.sign(wheel - state.previousWheel) * 24;
-  state.previousWheel = wheel;
-  $("#liveWheel").style.transform = `rotate(${state.wheelAngle}deg)`;
+  const wheelDirection = Number(telemetry.wheelDirection) || 0;
+  $("#liveWheelUp").classList.toggle("active", wheelDirection > 0);
+  $("#liveWheelDown").classList.toggle("active", wheelDirection < 0);
   const values = [...translation, ...rotation].map((value) => Math.abs(Number(value) || 0));
   const maxValue = Math.max(...values);
   const activeKeys = pressed.size;
@@ -480,7 +486,7 @@ async function connectCalibration(showErrors = true) {
     setLiveDataExpanded(false);
     state.serialSequence = 0;
     window.clearInterval(state.serialTimer);
-    state.serialTimer = window.setInterval(pollSerialOutput, 450);
+    state.serialTimer = window.setInterval(pollSerialOutput, 40);
     await request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: "40" }) });
     renderMotionStage();
     return true;
@@ -559,6 +565,8 @@ async function runMotionStage() {
 }
 
 async function pollSerialOutput() {
+  if (state.serialPollInFlight) return;
+  state.serialPollInFlight = true;
   try {
     const result = await request(`/api/serial/output?after=${state.serialSequence}`);
     state.serialSequence = result.sequence;
@@ -588,6 +596,8 @@ async function pollSerialOutput() {
     if (!result.connected && state.connectedForCalibration) disconnectCalibration();
   } catch (error) {
     window.clearInterval(state.serialTimer);
+  } finally {
+    state.serialPollInFlight = false;
   }
 }
 
@@ -674,34 +684,21 @@ async function loadKeyMapping() {
   }
 }
 
-async function saveKeyMapping() {
+async function saveKeyMapping({ quiet = false } = {}) {
   const mapping = $$('[data-key-map]').map((select) => Number(select.value));
   if (new Set(mapping).size !== mapping.length) {
-    toast("Assign each logical key exactly once.", true);
-    return;
+    throw new Error("Assign each logical key exactly once.");
   }
-  const button = $("#saveKeyMap");
-  button.disabled = true;
-  try {
-    const result = await request("/api/serial/keymap", { method: "POST", body: JSON.stringify({ mapping }) });
-    renderKeyMapping(result.mapping);
-    toast("Key assignments saved to the controller.");
-  } catch (error) {
-    toast(error.message, true);
-  } finally {
-    button.disabled = false;
-  }
+  if (!mapping.length) return;
+  const result = await request("/api/serial/keymap", { method: "POST", body: JSON.stringify({ mapping }) });
+  renderKeyMapping(result.mapping);
+  if (!quiet) toast("Key assignments saved to the controller.");
 }
 
-async function resetKeyMapping() {
+function resetKeyMapping() {
   const count = hidKeyCount();
-  try {
-    const result = await request("/api/serial/keymap", { method: "POST", body: JSON.stringify({ reset: true, count }) });
-    renderKeyMapping(result.mapping);
-    toast("Default key order restored.");
-  } catch (error) {
-    toast(error.message, true);
-  }
+  renderKeyMapping(Array.from({ length: count }, (_, index) => index + 1));
+  $("#tuningStatus").textContent = "Default key order selected — save to apply";
 }
 
 async function resetCenter() {
@@ -726,7 +723,6 @@ function updateTuningAvailability() {
   const connected = state.connectedForCalibration;
   $("#finishTuning").disabled = !connected;
   $("#resetCenter").disabled = !connected;
-  $("#saveKeyMap").disabled = !connected;
   $("#resetKeyMap").disabled = !connected;
   $$(".tuning-row input, .tuning-row select, [data-key-map]").forEach((control) => { control.disabled = !connected; });
   $("#tuningStatus").textContent = connected
@@ -747,6 +743,7 @@ async function finishTuning() {
   button.disabled = true;
   try {
     await saveTuning();
+    await saveKeyMapping({ quiet: true });
     state.completed = true;
     await request("/api/setup/complete", { method: "POST", body: "{}" });
     $("#resumeTuning").hidden = false;
@@ -789,7 +786,6 @@ function bindEvents() {
   });
   $("#curveMode").addEventListener("change", async () => { renderTuningLabels(); try { await saveTuning(); } catch (error) { toast(error.message, true); } });
   $("#resetCenter").addEventListener("click", resetCenter);
-  $("#saveKeyMap").addEventListener("click", saveKeyMapping);
   $("#resetKeyMap").addEventListener("click", resetKeyMapping);
 
   $$('input[name="edition"], input[name="controllerStyleChoice"], #handedness, #baseVariant, #controlVariant, #buttonMode, #wheelAxis, #exclusiveMode')

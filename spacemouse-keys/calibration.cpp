@@ -7,6 +7,7 @@
 
 // a dead zone above the following value will be warned
 #define DEADZONEWARNING 10
+#define SETUP_TELEMETRY_INTERVAL_MS 20
 
 #ifndef HALLEFFECT
   // a centerpoint below or above those values will be warned (384..640)
@@ -99,7 +100,10 @@ void debugOutput4(int16_t* velocity, uint8_t* keyOut) {
 
 /// @brief Emit one compact, machine-readable frame for the local setup interface.
 void debugOutputLive(int16_t* velocity, uint8_t* keyState, int32_t wheelPosition) {
-  if (!isDebugOutputDue()) return;
+  static unsigned long lastTelemetryOutput = 0;
+  const unsigned long now = millis();
+  if (now - lastTelemetryOutput < SETUP_TELEMETRY_INTERVAL_MS) return;
+  lastTelemetryOutput = now;
   uint16_t keyMask = 0;
   for (uint8_t i = 0; i < NUMKEYS && i < 16; i++) {
     if (keyState[i]) keyMask |= (1U << i);
