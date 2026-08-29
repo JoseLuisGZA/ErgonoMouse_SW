@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#e7e9eb" />
+    <title>ErgonoMouse Setup</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/app.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="setup-app" aria-live="polite">
+      <header class="app-header">
+        <a class="brand" href="#" id="brandHome" aria-label="Return to welcome">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>ErgonoMouse <b>Setup</b></span>
+        </a>
+        <div class="header-actions">
+          <button class="help-button" id="headerTune" type="button" hidden>Tune</button>
+          <button class="help-button" id="openAbout" type="button">About</button>
+          <button class="help-button" id="openHelp" type="button">Need help?</button>
+        </div>
+      </header>
+
+      <div class="app-body">
+        <aside class="setup-rail" aria-label="Setup progress">
+          <div class="rail-product">
+            <img src="/assets/ergonomouse-main.webp" alt="" />
+            <div><b>ErgonoMouse</b><small>6DOF controller</small></div>
+          </div>
+          <ol id="stepRail">
+            <li data-rail-step="1"><span>1</span><div><b>Connect</b><small>Find the controller</small></div></li>
+            <li data-rail-step="2"><span>2</span><div><b>Your model</b><small>Match the printed parts</small></div></li>
+            <li data-rail-step="3"><span>3</span><div><b>Preferences</b><small>Choose how it behaves</small></div></li>
+            <li data-rail-step="4"><span>4</span><div><b>Install</b><small>Put software on it</small></div></li>
+            <li data-rail-step="5"><span>5</span><div><b>Test motion</b><small>Check all six directions</small></div></li>
+            <li data-rail-step="6"><span>6</span><div><b>Tune</b><small>Adjust how it feels</small></div></li>
+            <li data-rail-step="7"><span>7</span><div><b>Ready</b><small>Finish setup</small></div></li>
+          </ol>
+          <div class="privacy-note"><span></span><div><b>Local interface</b><small>This is just an interface, everything runs on your computer.</small></div></div>
+        </aside>
+
+        <section class="screen-area">
+          <div class="mobile-progress" aria-hidden="true"><span id="mobileProgressBar"></span></div>
+
+          <section class="setup-screen welcome-screen active" data-screen="0" aria-labelledby="welcomeTitle">
+            <div class="welcome-visual">
+              <div class="device-halo"></div>
+              <img src="/assets/ergonomouse-main.webp" alt="A completed ErgonoMouse controller" />
+              <span class="motion-chip motion-chip-one">PAN</span>
+              <span class="motion-chip motion-chip-two">ROTATE</span>
+              <span class="motion-chip motion-chip-three">ZOOM</span>
+            </div>
+            <div class="screen-copy welcome-copy">
+              <p class="eyebrow">Welcome</p>
+              <h1 id="welcomeTitle">Let’s set up your<br />ErgonoMouse.</h1>
+              <p class="lead">We’ll find your controller, match the model you printed, install the right firmware, and check its motion.</p>
+              <div class="time-note"><span>≈ 5 min</span><span>No account</span><span>No command line</span></div>
+              <div class="welcome-actions">
+                <button class="primary-button" type="button" data-go="1">Get started <span>→</span></button>
+                <button class="text-button" id="resumeTuning" type="button" hidden>Fine-tune existing setup</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="setup-screen" data-screen="1" aria-labelledby="connectTitle">
+            <div class="screen-copy compact-copy">
+              <p class="step-kicker">Step 1 of 7</p>
+              <h1 id="connectTitle">Connect your controller.</h1>
+              <p class="lead">Use a USB data cable. Leave the ErgonoMouse resting on the desk while we find it.</p>
+            </div>
+
+            <div class="connect-stage" id="connectStage">
+              <div class="usb-illustration" aria-hidden="true">
+                <svg class="connect-icon lucide lucide-mouse" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="7"/><path d="M12 2v4"/></svg>
+                <div class="cable"><i></i></div>
+                <svg class="connect-icon lucide lucide-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+              </div>
+              <div class="detecting-state" id="detectingState">
+                <span class="spinner"></span>
+                <div><b>Looking for ErgonoMouse…</b><small>This updates automatically.</small></div>
+              </div>
+              <div class="detected-state" id="detectedState" hidden>
+                <span class="success-ring">✓</span>
+                <div><b>Controller found</b><small id="detectedPort">USB device connected</small></div>
+              </div>
+            </div>
+
+            <details class="help-disclosure">
+              <summary>Not showing up?</summary>
+              <div><b>Try these in order:</b><ol><li>Reconnect both ends of the cable.</li><li>Try a cable known to transfer phone data.</li><li>Try another USB port—avoid unpowered hubs.</li><li>Double-tap Reset on the Pro Micro.</li></ol></div>
+            </details>
+
+            <div class="screen-actions">
+              <button class="text-button" type="button" data-back>Back</button>
+              <button class="secondary-button" id="refreshStatus" type="button">Check again</button>
+              <button class="primary-button" id="connectContinue" type="button" data-go="2" disabled>Continue <span>→</span></button>
+            </div>
+          </section>
+
+          <section class="setup-screen" data-screen="2" aria-labelledby="modelTitle">
+            <div class="screen-copy compact-copy">
+              <p class="step-kicker">Step 2 of 7</p>
+              <h1 id="modelTitle">Which one did you build?</h1>
+              <p class="lead">Choose what you can see on the printed controller. We’ll handle the technical details.</p>
+            </div>
+
+            <div class="choice-section">
+              <span class="field-label">Model printed</span>
+              <div class="visual-choice two-up edition-choice">
+                <label>
+                  <input type="radio" name="edition" value="free" checked />
+                  <span><i class="choice-check">✓</i><b>Free / Simple Configuration</b><small>No wheel, controller buttons, or base keys</small></span>
+                </label>
+                <label>
+                  <input type="radio" name="edition" value="complete" />
+                  <span><i class="choice-check">✓</i><b>Complete / Custom Configuration</b><small>Wheel, buttons, keys, or a left- or right-hand design</small></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="choice-section">
+              <span class="field-label">Top control</span>
+              <div class="visual-choice two-up shape-choice">
+                <label><input type="radio" name="controllerStyleChoice" value="knob" checked /><span><i class="shape-icon knob-icon"></i><i class="choice-check">✓</i><b>Knob</b><small>Round top control</small></span></label>
+                <label><input type="radio" name="controllerStyleChoice" value="joystick" /><span><i class="shape-icon joystick-icon"></i><i class="choice-check">✓</i><b>Joystick</b><small>Joystick-style top control</small></span></label>
+              </div>
+              <select id="controllerStyle" hidden aria-hidden="true"><option value="knob">Knob</option><option value="joystick">Joystick</option></select>
+            </div>
+
+            <div class="complete-options" id="completeOptions" hidden>
+              <div class="select-grid">
+                <label class="select-card"><span>Orientation</span><select id="handedness"><option value="symmetric">Symmetric</option><option value="left">Left Hand</option><option value="right">Right Hand</option></select></label>
+                <label class="select-card"><span>Base</span><select id="baseVariant"><option value="simple">No Base Keys</option><option value="six_keys">6 Base Keys</option></select></label>
+                <label class="select-card"><span>Top Controls</span><select id="controlVariant"><option value="simple">No Wheel or Buttons</option><option value="wheel">Wheel Only</option><option value="buttons">2 Buttons Only</option><option value="full">Wheel + 2 Buttons</option></select></label>
+              </div>
+            </div>
+
+            <div class="screen-actions">
+              <button class="text-button" type="button" data-back>Back</button>
+              <button class="primary-button" id="modelContinue" type="button" data-go="3">Looks right <span>→</span></button>
+            </div>
+          </section>
+
+          <section class="setup-screen" data-screen="3" aria-labelledby="preferencesTitle">
+            <div class="screen-copy compact-copy">
+              <p class="step-kicker">Step 3 of 7</p>
+              <h1 id="preferencesTitle">Make it feel natural.</h1>
+              <p class="lead">The recommended choices work well for most applications. You can change them later.</p>
+            </div>
+
+            <div class="preference-list">
+              <label class="preference-row wheel-option" hidden>
+                <span class="preference-icon">↕</span>
+                <span><b>Wheel action</b><small>What should the side wheel control?</small></span>
+                <select id="wheelAxis"><option value="2">Zoom in / out</option><option value="3">Move up / down</option><option value="1">Move left / right</option><option value="4">Rotate front / back</option><option value="5">Rotate left / right</option><option value="6">Twist</option></select>
+              </label>
+              <label class="preference-row button-option" hidden>
+                <span class="preference-icon">●</span>
+                <span><b>Two precision buttons</b><small>Hold one while moving to isolate a precise motion.</small></span>
+                <select id="buttonMode"><option value="kill">Hold to isolate motion</option><option value="hid">Use as CAD shortcuts</option></select>
+              </label>
+              <label class="preference-row toggle-preference">
+                <span class="preference-icon">⌁</span>
+                <span><b>Intentional motion</b><small>Reduce accidental mixing between move and rotate.</small></span>
+                <input id="exclusiveMode" type="checkbox" checked /><i class="switch"></i>
+              </label>
+            </div>
+
+            <div class="recommended-note"><span>Recommended</span> Start with these settings. Fine-tuning happens after installation.</div>
+
+            <div class="screen-actions">
+              <button class="text-button" type="button" data-back>Back</button>
+              <button class="primary-button" id="prepareFirmware" type="button">Continue <span>→</span></button>
+            </div>
+          </section>
+
+          <section class="setup-screen" data-screen="4" aria-labelledby="installTitle">
+            <div class="screen-copy compact-copy">
+              <p class="step-kicker">Step 4 of 7</p>
+              <h1 id="installTitle">Ready to install.</h1>
+              <p class="lead" id="installHelp">We found the right verified firmware. Keep the controller connected and still.</p>
+            </div>
+
+            <div class="review-card">
+              <div class="review-copy"><b id="reviewModel">Free / Simple · Knob</b><small id="reviewFeatures">Intentional motion</small></div>
+              <button class="text-button" type="button" data-go="2">Change</button>
+            </div>
+
+            <div class="install-status-card">
+              <div id="installIdle" class="install-state active">
+                <div class="install-glyph"><span>EM</span></div>
+                <h2>Install ErgonoMouse firmware</h2>
+                <p>No compiler or technical setup required.</p>
+              </div>
+              <div id="installWorking" class="install-state" hidden>
+                <div class="install-glyph working"><span>···</span></div>
+                <h2>Installing…</h2>
+                <p id="installWorkingText">Preparing the controller. Don’t unplug it.</p>
+                <div class="install-progress"><i id="installProgressBar"></i></div>
+              </div>
+              <div id="installSuccess" class="install-state" hidden>
+                <div class="install-glyph success"><span>✓</span></div>
+                <h2>Firmware installed</h2>
+                <p>The controller restarted successfully.</p>
+              </div>
+              <div id="installFailure" class="install-state" hidden>
+                <div class="install-glyph failure"><span>!</span></div>
+                <h2>Let’s try that again</h2>
+                <p id="installRecovery">Reconnect the USB cable, then retry.</p>
+              </div>
+            </div>
+
+            <label class="port-picker" hidden><span>Connected device</span><select id="devicePort"><option value="">No device detected</option></select></label>
+            <details class="technical-details">
+              <summary>Technical details</summary>
+              <div id="checks"></div>
+              <details id="previewPanel"><summary>Generated configuration</summary><pre id="configPreview"></pre></details>
+              <div id="terminal" class="terminal" hidden><pre id="terminalOutput"></pre></div>
+            </details>
+
+            <div class="screen-actions">
+              <button class="text-button" type="button" data-back>Back</button>
+              <button id="buildFirmware" type="button" hidden>Build</button>
+              <button id="flashFirmware" type="button" hidden disabled>Flash</button>
+              <button id="installFirmware" class="primary-button wide-action" type="button">Install firmware <span>→</span></button>
+              <button id="installContinue" class="primary-button" type="button" data-go="5" hidden>Test motion <span>→</span></button>
+            </div>
+            <button id="generateConfig" type="button" hidden>Generate</button>
+            <span id="configBadge" hidden>Not generated</span><span id="buildBadge" hidden>Waiting</span>
+          </section>
+
+          <section class="setup-screen" data-screen="5" aria-labelledby="motionTitle">
+            <div class="screen-copy compact-copy">
+              <p class="step-kicker">Step 5 of 7</p>
+              <h1 id="motionTitle">Now check the motion.</h1>
+              <p class="lead">We’ll walk through each check. Keep the controller still until asked to move it.</p>
+            </div>
+
+            <div class="calibration-connect-card" id="calibrationConnectCard">
+              <span class="calibration-device">EM</span>
+              <div><b id="calibrationConnectTitle">Connect for testing</b><small id="calibrationConnectHelp">This opens a private live link to the controller.</small></div>
+              <button id="connectCalibration" class="secondary-button" type="button">Connect</button>
+              <button id="disconnectCalibration" class="text-button" type="button" hidden disabled>Disconnect</button>
+            </div>
+
+            <div class="motion-test-card" id="motionTestCard">
+              <div class="motion-visual"><img src="/assets/motion-exploded.webp" alt="Exploded view of the ErgonoMouse controller assembly" /></div>
+              <div class="motion-instructions">
+                <span id="motionCounter">Check 1 of 5</span>
+                <h2 id="motionStageTitle">Check the eight inputs</h2>
+                <p id="motionStageHelp">Move one internal joystick axis at a time and confirm the values respond.</p>
+                <div id="controlChecklist" class="control-checklist" hidden aria-live="polite"></div>
+                <button id="runMotionStage" class="primary-button" type="button" disabled>Start this check</button>
+              </div>
+            </div>
+
+            <div class="stage-dots" id="stageDots" aria-label="Motion test progress"></div>
+            <span id="calibrationBadge" hidden>Not connected</span>
+            <div id="calibrationTerminal" class="terminal calibration-terminal" hidden>
+              <div class="terminal-heading"><span class="live-dot"></span> Live controller data <button id="toggleLiveData" class="text-button" type="button">Expand</button></div>
+              <p id="calibrationOutputPreview" class="terminal-preview">Waiting for data…</p>
+              <pre id="calibrationOutput" hidden>Waiting for data…</pre>
+            </div>
+
+            <div class="screen-actions">
+              <button class="text-button" type="button" data-back>Back</button>
+              <button id="finishCalibration" class="primary-button" type="button" disabled>Continue to tuning <span>→</span></button>
+            </div>
+            <div class="calibration-stages" hidden>
+              <button data-mode="1">Check inputs</button><button data-mode="11">Find centre</button><button data-mode="20">Capture limits</button><button data-mode="4">Verify 6DOF</button>
+            </div>
+          </section>
+
+          <section class="setup-screen tuning-screen" data-screen="6" aria-labelledby="tuningTitle">
+            <div class="screen-copy compact-copy">
+              <p class="step-kicker">Step 6 of 7</p>
+              <h1 id="tuningTitle">Tune the feel.</h1>
+              <p class="lead">Try the controller as you adjust it. These simple controls update the device without asking for technical values.</p>
+            </div>
+
+            <div class="tuning-layout">
+              <figure class="tuning-photo"><img src="/assets/ergonomouse-main.webp" alt="ErgonoMouse controller ready for tuning" /></figure>
+              <div class="tuning-controls">
+                <div class="tuning-heading"><div><b>Response</b><small id="tuningStatus">Recommended settings selected</small></div><button id="recommendedTuning" class="text-button" type="button">Reset recommended</button></div>
+                <label class="tuning-row"><span><b>Movement speed</b><small>Left, right, forward, and back</small></span><input id="translationTune" type="range" min="1" max="9" value="5" list="tuningScale" /><output for="translationTune">Balanced</output></label>
+                <label class="tuning-row"><span><b>Lift / push speed</b><small>Up and down motion</small></span><input id="verticalTune" type="range" min="1" max="9" value="5" list="tuningScale" /><output for="verticalTune">Balanced</output></label>
+                <label class="tuning-row"><span><b>Rotation speed</b><small>Tilt and twist</small></span><input id="rotationTune" type="range" min="1" max="9" value="5" list="tuningScale" /><output for="rotationTune">Balanced</output></label>
+                <label class="tuning-row"><span><b>Center stability</b><small>Resistance to small accidental movement</small></span><input id="stabilityTune" type="range" min="1" max="9" value="5" list="tuningScale" /><output for="stabilityTune">Balanced</output></label>
+                <datalist id="tuningScale"><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option><option value="9"></option></datalist>
+              </div>
+            </div>
+
+            <div class="screen-actions">
+              <button class="text-button" id="tuningBack" type="button">Back</button>
+              <button id="finishTuning" class="primary-button" type="button">Save and finish <span>→</span></button>
+            </div>
+          </section>
+
+          <section class="setup-screen complete-screen" data-screen="7" aria-labelledby="completeTitle">
+            <div class="complete-burst" aria-hidden="true"><i></i><i></i><i></i><span>✓</span></div>
+            <p class="eyebrow">Setup complete</p>
+            <h1 id="completeTitle">Your ErgonoMouse<br />is ready.</h1>
+            <p class="lead">Your configuration is saved locally. You can return here any time to adjust or reinstall it.</p>
+            <div class="completion-summary">
+              <div><span>✓</span><b>Firmware installed</b></div>
+              <div><span>✓</span><b>Motion checked</b></div>
+              <div><span>✓</span><b>Settings saved locally</b></div>
+            </div>
+            <div class="complete-actions">
+              <button class="primary-button" id="readyFineTune" type="button">Fine-tune controller</button>
+              <button class="secondary-button" type="button" data-go="2">Change configuration</button>
+            </div>
+          </section>
+        </section>
+      </div>
+    </main>
+
+    <dialog id="helpDialog" class="help-dialog">
+      <button id="closeHelp" class="dialog-close" aria-label="Close help">×</button>
+      <p class="eyebrow">Help</p><h2>Setup essentials</h2>
+      <div class="help-list"><div><span>1</span><p><b>Use a data cable</b><small>Some USB cables only provide power.</small></p></div><div><span>2</span><p><b>Keep the controller still</b><small>It learns its centre when starting.</small></p></div><div><span>3</span><p><b>Reset when asked</b><small>A quick double-tap helps the installer find the bootloader.</small></p></div></div>
+      <button id="closeHelpAction" class="primary-button" type="button">Got it</button>
+    </dialog>
+
+    <dialog id="aboutDialog" class="help-dialog about-dialog">
+      <button id="closeAbout" class="dialog-close" aria-label="Close about">×</button>
+      <p class="eyebrow">About</p><h2>ErgonoMouse Setup</h2>
+      <p class="about-intro">A local setup interface for the open ErgonoMouse 6DOF controller.</p>
+      <div class="credit-list">
+        <div><b>@JoseLuisGZA</b><small>ErgonoMouse design and this version of the software</small></div>
+        <div><b>@AndunHH</b><small>Development of the previous firmware versions</small></div>
+        <div><b>@TeachingTech</b><small>Project inspiration</small></div>
+      </div>
+      <button id="closeAboutAction" class="primary-button" type="button">Close</button>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

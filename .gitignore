@@ -1,0 +1,31 @@
+// Every file (except, "config_sample.h") will be ignored by git!
+config*.h
+*.bak
+.pio
+.vscode/*
+.idea
+.venv
+__pycache__/
+*.py[cod]
+.ergonomouse/
+.bundle-tools/
+build/
+dist/
+artifacts/
+firmware/*.hex
+firmware/manifest.json
+
+//this file should be included:
+!config_sample*.h
+!.vscode/settings.json
+
+README_tmp.html
+README.pdf
+README.html
+spacemouse-keys/testConfigs/readme.pdf
+preRelease.pdf
+
+# Internal working documents (never publish)
+docs/internal/
+docs/reviews/
+docs/DRIVER_COMPATIBILITY.md

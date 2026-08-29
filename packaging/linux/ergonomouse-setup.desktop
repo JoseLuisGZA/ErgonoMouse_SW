@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ErgonoMouse Setup
+Comment=Configure, install and validate ErgonoMouse firmware
+Exec=ErgonoMouse-Setup
+Icon=ergonomouse-setup
+Terminal=false
+Categories=Settings;HardwareSettings;
+StartupNotify=true

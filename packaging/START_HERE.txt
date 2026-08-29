@@ -1,0 +1,15 @@
+ERGONOMOUSE SETUP 4.1
+=====================
+
+1. Windows: run the installer. Linux: open the AppImage. macOS: drag the app
+   from the DMG to Applications. See UNSIGNED_INSTALL.txt if your system asks
+   you to confirm the unsigned application.
+2. Open ErgonoMouse Setup. Your browser will show a private page from this
+   computer.
+3. Connect the Arduino Pro Micro with a USB data cable.
+4. Follow the six short screens; the app identifies and configures your model.
+5. Install the verified firmware, then follow each guided motion check.
+
+Nothing is uploaded and no account is required.
+
+If the app does not open a browser, visit http://127.0.0.1:8765.

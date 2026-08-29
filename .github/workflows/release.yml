@@ -1,0 +1,213 @@
+name: Build native ErgonoMouse Setup packages
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "ergonomouse-sw-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    name: Verified firmware matrix
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned firmware toolchain
+        run: |
+          python -m pip install -r requirements-dev.txt
+          pio pkg install --global --platform "platformio/atmelavr@5.3.0"
+      - name: Run automated tests
+        run: python -m unittest discover -v
+      - name: Build firmware once for every platform
+        run: python tools/build_firmware_matrix.py
+      - name: Verify firmware manifest and checksums
+        shell: python
+        run: |
+          import hashlib
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path('firmware/manifest.json').read_text())
+          assert len(manifest['variants']) == 84
+          for entry in manifest['variants'].values():
+              payload = (Path('firmware') / entry['file']).read_bytes()
+              assert hashlib.sha256(payload).hexdigest() == entry['sha256']
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-firmware-matrix
+          path: firmware/
+          if-no-files-found: error
+
+  package:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64 AppImage
+            os: ubuntu-24.04
+            package: appimage
+          - name: Windows x64 installer
+            os: windows-2025
+            package: windows
+          - name: macOS Intel DMG
+            os: macos-15-intel
+            package: dmg
+          - name: macOS Apple Silicon DMG
+            os: macos-15
+            package: dmg
+    needs: firmware
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build tools
+        run: python -m pip install -r requirements-dev.txt
+      - name: Install pinned flasher
+        run: pio pkg install --global --tool "platformio/tool-avrdude@1.80100.0"
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-firmware-matrix
+          path: firmware
+      - name: Install Inno Setup
+        if: runner.os == 'Windows'
+        run: choco install innosetup --no-progress -y
+      - name: Run automated tests
+        run: python -m unittest discover -v
+      - name: Build portable release
+        run: python tools/package_release.py
+      - name: Build native package
+        run: python tools/package_native.py --format ${{ matrix.package }}
+
+      - name: Smoke-test Linux AppImage
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          artifact=$(find artifacts -maxdepth 1 -name '*.AppImage' -print -quit)
+          APPIMAGE_EXTRACT_AND_RUN=1 "$artifact" start --no-browser --port 18774 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do curl -fsS http://127.0.0.1:18774/api/status && break; sleep 1; done
+          curl -fsS http://127.0.0.1:18774/api/status | python -c "import json,sys; s=json.load(sys.stdin); assert s['mode']=='portable' and s['installer']['variantCount']==84 and s['installer']['flasher']"
+
+      - name: Smoke-test Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem artifacts\*-setup.exe | Select-Object -First 1
+          $installDir = Join-Path $env:RUNNER_TEMP 'ErgonoMouse Setup'
+          $install = Start-Process $installer.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',("/DIR=`"$installDir`"") -PassThru -Wait
+          if ($install.ExitCode -ne 0) { throw "Installer failed with exit code $($install.ExitCode)" }
+          $app = Start-Process (Join-Path $installDir 'ErgonoMouse-Setup.exe') -ArgumentList 'start','--no-browser','--port','18774' -PassThru
+          try {
+            $status = $null
+            for ($attempt = 0; $attempt -lt 30 -and $null -eq $status; $attempt++) {
+              Start-Sleep -Seconds 1
+              try { $status = Invoke-RestMethod http://127.0.0.1:18774/api/status } catch { }
+            }
+            if ($status.mode -ne 'portable' -or $status.installer.variantCount -ne 84 -or -not $status.installer.flasher) { throw 'Installed application smoke test failed' }
+          } finally {
+            Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Smoke-test macOS DMG
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          artifact=$(find artifacts -maxdepth 1 -name '*.dmg' -print -quit)
+          mount_point="$RUNNER_TEMP/ergonomouse-dmg"
+          installed_app="$RUNNER_TEMP/ErgonoMouse Setup.app"
+          log_file="$RUNNER_TEMP/ergonomouse-macos.log"
+          status_file="$RUNNER_TEMP/ergonomouse-status.json"
+          server_pid=""
+          mkdir -p "$mount_point"
+          hdiutil attach "$artifact" -nobrowse -readonly -mountpoint "$mount_point"
+          cleanup() {
+            if [[ -n "$server_pid" ]]; then kill "$server_pid" 2>/dev/null || true; fi
+            hdiutil detach "$mount_point" -force >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          codesign --verify --deep --strict --verbose=2 "$mount_point/ErgonoMouse Setup.app"
+          rm -rf "$installed_app"
+          ditto "$mount_point/ErgonoMouse Setup.app" "$installed_app"
+          codesign --verify --deep --strict --verbose=2 "$installed_app"
+          plutil -lint "$installed_app/Contents/Info.plist"
+          file "$installed_app/Contents/MacOS/ErgonoMouse-Setup"
+          "$installed_app/Contents/MacOS/ErgonoMouse-Setup" start --no-browser --port 18774 >"$log_file" 2>&1 &
+          server_pid=$!
+          ready=0
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:18774/api/status -o "$status_file"; then ready=1; break; fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if (( ready == 0 )); then
+            cat "$log_file"
+            wait "$server_pid" || true
+            exit 1
+          fi
+          python -c "import json,sys; s=json.load(sys.stdin); assert s['mode']=='portable' and s['installer']['variantCount']==84 and s['installer']['flasher']" < "$status_file"
+
+      - name: Verify checksums
+        shell: python
+        run: |
+          import hashlib
+          from pathlib import Path
+          for checksum in Path('artifacts').glob('*.sha256'):
+              expected, filename = checksum.read_text().split()
+              actual = hashlib.sha256((checksum.parent / filename).read_bytes()).hexdigest()
+              assert actual == expected, filename
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ErgonoMouse-Setup-${{ runner.os }}-${{ runner.arch }}
+          path: |
+            artifacts/*.AppImage
+            artifacts/*.dmg
+            artifacts/*-setup.exe
+            artifacts/*.zip
+            artifacts/*.sha256
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ErgonoMouse-Setup-*
+          path: release-artifacts
+          merge-multiple: true
+      - name: Publish verified native packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mapfile -d '' release_files < <(
+            find release-artifacts -type f \
+              \( -name '*.AppImage' -o -name '*.dmg' -o -name '*-setup.exe' -o -name '*.zip' -o -name '*.sha256' \) \
+              -print0
+          )
+          if (( ${#release_files[@]} == 0 )); then
+            echo "No verified native packages were produced" >&2
+            exit 1
+          fi
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber "${release_files[@]}"
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "ErgonoMouse SW ${GITHUB_REF_NAME#ergonomouse-sw-v}" \
+              --generate-notes \
+              "${release_files[@]}"
+          fi

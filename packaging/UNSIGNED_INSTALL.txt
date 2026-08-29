@@ -1,0 +1,29 @@
+ERGONOMOUSE SETUP — UNSIGNED RELEASE
+====================================
+
+ErgonoMouse Setup is open, account-free software. This package is not digitally
+signed, so Windows or macOS may ask you to confirm that you trust it.
+
+WINDOWS
+-------
+If Microsoft Defender SmartScreen appears, choose "More info", verify that the
+application name is ErgonoMouse Setup, then choose "Run anyway".
+
+MACOS
+-----
+Open the DMG and drag ErgonoMouse Setup to Applications. The first time you open
+it, Control-click the app, choose "Open", then confirm "Open". If macOS still
+blocks it, open System Settings > Privacy & Security and choose "Open Anyway".
+
+LINUX
+-----
+Make the AppImage executable if your file manager did not preserve the setting:
+right-click > Properties > Permissions > Allow executing file as program.
+
+VERIFYING THE DOWNLOAD
+----------------------
+Each download has a matching .sha256 text file. Compare it with your operating
+system's SHA-256 tool before opening the package. A matching checksum proves the
+download is byte-for-byte identical to the published release artifact.
+
+No account, online activation, Python, Arduino IDE or compiler is required.

@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+set -eu
+
+PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -x "$PROJECT_DIR/.venv/bin/python" ]; then
+  exec "$PROJECT_DIR/.venv/bin/python" -m app "$@"
+fi
+exec python3 -m app "$@"
