@@ -4,6 +4,11 @@ All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomou
 
 ## Unreleased
 
+## 4.4.0-rc.3 — ErgonoMouse source-axis correction
+
+- Corrected the ErgonoMouse analog input order so each joystick's up/down channel feeds AX/BX/CX/DX and its left/right channel feeds AY/BY/CY/DY before kinematics are calculated.
+- Added a Windows-only release-candidate workflow for faster hardware iteration while retaining the full native workflow for approved releases.
+
 ## 4.4.0-rc.2 — Continuous motion feedback and layout refinement
 
 - Kept structured 6DOF, key and wheel telemetry active during every diagnostic check and reduced the end-to-end update interval for immediate visual feedback.

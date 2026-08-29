@@ -1,0 +1,127 @@
+name: Build Windows ErgonoMouse Setup candidate
+
+on:
+  push:
+    tags:
+      - "ergonomouse-sw-v*-rc.*"
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    name: Verified firmware matrix
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned firmware toolchain
+        run: |
+          python -m pip install -r requirements-dev.txt
+          pio pkg install --global --platform "platformio/atmelavr@5.3.0"
+      - name: Run automated tests
+        run: python -m unittest discover -v
+      - name: Build firmware once for every Windows configuration
+        run: python tools/build_firmware_matrix.py
+      - name: Verify firmware manifest and checksums
+        shell: python
+        run: |
+          import hashlib
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path('firmware/manifest.json').read_text())
+          assert len(manifest['variants']) == 84
+          for entry in manifest['variants'].values():
+              payload = (Path('firmware') / entry['file']).read_bytes()
+              assert hashlib.sha256(payload).hexdigest() == entry['sha256']
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-firmware-matrix
+          path: firmware/
+          if-no-files-found: error
+
+  windows:
+    name: Windows x64 installer
+    needs: firmware
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build tools
+        run: python -m pip install -r requirements-dev.txt
+      - name: Install pinned flasher
+        run: pio pkg install --global --tool "platformio/tool-avrdude@1.80100.0"
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-firmware-matrix
+          path: firmware
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Run automated tests
+        run: python -m unittest discover -v
+      - name: Build portable release
+        run: python tools/package_release.py
+      - name: Build Windows installer
+        run: python tools/package_native.py --format windows
+      - name: Smoke-test Windows installer
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem artifacts\*-setup.exe | Select-Object -First 1
+          $installDir = Join-Path $env:RUNNER_TEMP 'ErgonoMouse Setup'
+          $install = Start-Process $installer.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',("/DIR=`"$installDir`"") -PassThru -Wait
+          if ($install.ExitCode -ne 0) { throw "Installer failed with exit code $($install.ExitCode)" }
+          $app = Start-Process (Join-Path $installDir 'ErgonoMouse-Setup.exe') -ArgumentList 'start','--no-browser','--port','18774' -PassThru
+          try {
+            $status = $null
+            for ($attempt = 0; $attempt -lt 30 -and $null -eq $status; $attempt++) {
+              Start-Sleep -Seconds 1
+              try { $status = Invoke-RestMethod http://127.0.0.1:18774/api/status } catch { }
+            }
+            if ($status.mode -ne 'portable' -or $status.installer.variantCount -ne 84 -or -not $status.installer.flasher) { throw 'Installed application smoke test failed' }
+          } finally {
+            Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+          }
+      - name: Verify checksums
+        shell: python
+        run: |
+          import hashlib
+          from pathlib import Path
+          for checksum in Path('artifacts').glob('*.sha256'):
+              expected, filename = checksum.read_text().split()
+              actual = hashlib.sha256((checksum.parent / filename).read_bytes()).hexdigest()
+              assert actual == expected, filename
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ErgonoMouse-Setup-Windows-X64
+          path: |
+            artifacts/*-setup.exe
+            artifacts/*.zip
+            artifacts/*.sha256
+          if-no-files-found: error
+
+  release:
+    name: Publish Windows candidate
+    needs: windows
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ErgonoMouse-Setup-Windows-X64
+          path: release-artifacts
+      - name: Publish verified Windows package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mapfile -d '' release_files < <(find release-artifacts -type f -print0)
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "ErgonoMouse SW ${GITHUB_REF_NAME#ergonomouse-sw-v}" \
+            --generate-notes \
+            --prerelease \
+            "${release_files[@]}"

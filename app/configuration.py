@@ -320,8 +320,9 @@ def render_config(settings: ErgonoMouseSettings) -> str:
 #define STARTDEBUG 0
 #undef HALLEFFECT
 
-// Four KY-023 joystick modules: AX, AY, BX, BY, CX, CY, DX, DY
-#define PINLIST {{A0, A1, A2, A3, A6, A7, A8, A9}}
+// Four KY-023 joystick modules: each up/down axis first, then left/right.
+// Common modules label those channels Y/X, so each Arduino analog pair is swapped here.
+#define PINLIST {{A1, A0, A3, A2, A7, A6, A9, A8}}
 #define INVERTLIST {{0, 0, 0, 0, 0, 0, 0, 0}}
 
 // Starting calibration; fine-tune these values on the physical unit.

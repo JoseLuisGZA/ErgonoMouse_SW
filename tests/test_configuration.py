@@ -22,7 +22,7 @@ from app.configuration import (
 class ConfigurationTests(unittest.TestCase):
     def test_free_default_matches_simple_model(self) -> None:
         output = render_config(DEFAULT_SETTINGS)
-        self.assertIn("#define PINLIST {A0, A1, A2, A3, A6, A7, A8, A9}", output)
+        self.assertIn("#define PINLIST {A1, A0, A3, A2, A7, A6, A9, A8}", output)
         self.assertIn("#define NUMKEYS 0", output)
         self.assertIn("#define ROTARY_AXIS 0", output)
         self.assertIn("wired directly to 5V and GND", output)
