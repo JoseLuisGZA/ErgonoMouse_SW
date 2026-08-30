@@ -20,7 +20,7 @@ const uint8_t AXIS_MAP_VERSION = 2;
 const uint8_t AXIS_SWAP_GROUPS_FLAG = 1U << 6;
 const uint8_t AXIS_MAP_ALLOWED_FLAGS = 0x7F;
 const uint8_t BASELINE_AXIS_INVERT_FLAGS =
-    (1U << TRANSZ) | (1U << ROTX) | (1U << ROTY) | (1U << ROTZ);
+    (1U << TRANSX) | (1U << TRANSY) | (1U << ROTZ);
 const uint8_t DEFAULT_AXIS_MAP_FLAGS = 0;
 
 struct RuntimeKeyOrderRecord {

@@ -237,8 +237,9 @@ function updateVariantUI(markDirty = true) {
   $("#completeOptions").hidden = isFree;
   $$(".wheel-option").forEach((element) => { element.hidden = !hasWheel; });
   $$(".button-option").forEach((element) => { element.hidden = !hasButtons; });
+  $("#precisionButtonGuide").hidden = !hasButtons || settings.controller_buttons_mode !== "kill";
   $("#buttonModeHelp").textContent = settings.controller_buttons_mode === "kill"
-    ? "Hold either button to suppress rotation or movement. Double-click it to toggle one-axis-only precision for the remaining motion."
+    ? "Steady difficult 6DOF moves by temporarily removing either rotation or movement."
     : "Use the two controller buttons as additional shortcuts sent directly to your CAD application.";
   $("#modelContinue").disabled = false;
   updateReview();
@@ -283,13 +284,12 @@ function updateLiveVisualization(telemetry) {
   const rx = clamp(rotation[0] / 350, 1);
   const ry = clamp(rotation[1] / 350, 1);
   const rz = clamp(rotation[2] / 350, 1);
-  // Map the controller's physical rotations onto the displayed cube: RX turns around
-  // its right-facing axis, RZ twists around its vertical axis, and RY uses the remaining axis.
-  // The position wrapper handles translation only; the solid cube handles rotation only.
-  $("#motionCubePosition").style.transform = `translate3d(${tx * 27}px, ${-ty * 25}px, ${tz * 30}px) scale(${1 + tz * 0.08})`;
-  $("#motionCube").style.transform = `rotateX(${-18 + rx * 38}deg) rotateY(${28 + rz * 42}deg) rotateZ(${ry * 40}deg)`;
-  const knobScale = 1 + tz * 0.18;
-  $("#liveKnob").style.transform = `translate(${-tx * 8}px, ${-ty * 8}px) scale(${knobScale}) rotateX(${rx * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rz * 8}deg)`;
+  // The telemetry follows HID axis names. In the perspective view, HID TY is depth and HID TZ is
+  // vertical. The cube rotations use the matching drawn axes, with signs chosen for physical motion.
+  $("#motionCubePosition").style.transform = `translate3d(${tx * 27}px, ${-tz * 25}px, ${ty * 30}px) scale(${1 + ty * 0.08})`;
+  $("#motionCube").style.transform = `rotateX(${-18 - rx * 38}deg) rotateY(${28 - rz * 42}deg) rotateZ(${-ry * 40}deg)`;
+  const knobScale = 1 - tz * 0.18;
+  $("#liveKnob").style.transform = `translate(${tx * 8}px, ${ty * 8}px) scale(${knobScale}) rotateX(${-rx * 8}deg) rotateY(${-ry * 8}deg) rotateZ(${rz * 8}deg)`;
   const pressed = new Set(telemetry.keys || []);
   $$('[data-live-key]').forEach((key) => key.classList.toggle("pressed", pressed.has(Number(key.dataset.liveKey))));
   const wheelDirection = Number(telemetry.wheelDirection) || 0;

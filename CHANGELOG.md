@@ -4,6 +4,10 @@ All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomou
 
 ## Unreleased
 
+- Corrected the default HID signs so TX, TY, TZ, RX and RY follow physical CAD motion while RZ keeps its verified direction.
+- Swapped TY/TZ only in the cube projection, corrected the cube's RZ direction, and preserved the already-correct physical RX/RY response independently of the HID fix.
+- Moved the X/Y/Z reference below the cube, set Y to the requested 45-degree relationship with Z, and expanded the Preferences explanation for first-time precision-button users.
+
 ## 4.4.0-rc.7 — Front-axis motion and one-axis precision
 
 - Drew the X/Y/Z guide from the cube's front corner, swapped the RX/RY cube rotations, inverted the default wheel zoom direction and rebalanced the motion card into a 60/40 visualization/instruction split with added controller spacing.
