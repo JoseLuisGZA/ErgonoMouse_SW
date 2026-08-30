@@ -108,7 +108,7 @@ class ReleaseTests(unittest.TestCase):
         script = (project / "app" / "static" / "app.js").read_text(encoding="utf-8")
         styles = (project / "app" / "static" / "app.css").read_text(encoding="utf-8")
         markup = (project / "app" / "static" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("translate3d(${-tx * 27}px, ${-tz * 25}px, ${ty * 30}px)", script)
+        self.assertIn("translate3d(${tx * 27}px, ${tz * 25}px, ${ty * 30}px)", script)
         self.assertIn("rotateX(${-18 - rx * 38}deg)", script)
         self.assertIn("rotateY(${28 - rz * 42}deg)", script)
         self.assertIn("rotateZ(${-ry * 40}deg)", script)

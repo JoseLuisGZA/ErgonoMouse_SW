@@ -4,7 +4,7 @@ All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomou
 
 ## Unreleased
 
-- Corrected the live cube's remaining TX display direction and clarified that double-click precision leaves only one axis active at a time.
+- Corrected the live cube's remaining TX/TZ display directions and clarified that double-click precision leaves only one axis active at a time.
 
 ## 4.4.0-rc.8 — Verified HID and cube directions
 
