@@ -2,7 +2,7 @@
 
 All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomouse-sw-vX.Y.Z` prefix to avoid collisions with upstream firmware tags.
 
-## Unreleased
+## 4.4.0-rc.8 — Verified HID and cube directions
 
 - Corrected the default HID signs so TX, TY, TZ, RX and RY follow physical CAD motion while RZ keeps its verified direction.
 - Swapped TY/TZ only in the cube projection, corrected the cube's RZ direction, and preserved the already-correct physical RX/RY response independently of the HID fix.
