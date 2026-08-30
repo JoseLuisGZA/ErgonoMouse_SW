@@ -4,6 +4,8 @@ Firmware and a guided local setup experience for the **ErgonoMouse MK XX** 6DOF 
 
 ErgonoMouse SW keeps the proven [AndunHH SpaceMouse firmware](https://github.com/AndunHH/spacemouse) at its core and adds an ErgonoMouse-specific path from a finished hardware build to working CAD input. The setup runs locally, stores no data remotely, and replaces manual editing of a large C header for the common configuration.
 
+Although the ErgonoMouse works with CAD and other compatible applications, we recommend using 3Dconnexion software for the broadest application support and configuration options. ErgonoMouse SW is an independent community project and is not affiliated with or endorsed by 3Dconnexion.
+
 ![ErgonoMouse MK XX](pictures/ergonomouse.webp)
 
 ## Install it — no developer tools
