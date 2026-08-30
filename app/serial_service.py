@@ -287,7 +287,16 @@ class SerialSession:
             telemetry = dict(self._telemetry)
             if time.monotonic() >= self._wheel_direction_until:
                 telemetry["wheelDirection"] = 0
-        return {"lines": lines, "sequence": sequence, "telemetry": telemetry, **self.status()}
+        # This endpoint is polled at display cadence. Avoid re-enumerating every serial
+        # port on each frame; the slower status endpoint remains the source for port lists.
+        return {
+            "lines": lines,
+            "sequence": sequence,
+            "telemetry": telemetry,
+            "available": self.available,
+            "connected": self.connected,
+            "port": self.port,
+        }
 
     def status(self) -> dict[str, Any]:
         return {

@@ -1,4 +1,5 @@
 let motionStages = [];
+const SERIAL_POLL_INTERVAL_MS = 16;
 
 function buildMotionStages() {
   const settings = settingsFromForm();
@@ -21,7 +22,7 @@ function buildMotionStages() {
     stages.push({ autoStart: true, mode: "9", title: "Turn the wheel both ways", help: "Rotate the wheel clockwise and counter-clockwise, then confirm both directions respond.", done: "Wheel responds both ways", wait: 0 });
   }
   if (["buttons", "full"].includes(settings.control_variant) && settings.controller_buttons_mode === "kill") {
-    stages.push({ autoStart: true, mode: "6", title: "Try the precision buttons", help: "Hold Rotation lock while moving to allow translation only. Hold Movement lock to allow rotation only.", done: "Both locks work", wait: 0 });
+    stages.push({ autoStart: true, mode: "6", title: "Try the precision buttons", help: "Hold Rotation lock for translation only, or Movement lock for rotation only. Double-click either button to toggle one-axis-only precision for its remaining motion group.", done: "Both locks work", wait: 0 });
   }
   stages.push(
     { autoStart: false, mode: "11", title: "Find the centre", help: "Take your hand off the controller. It will measure its resting position and idle noise.", start: "Find centre", done: "Centre found", wait: 2600 },
@@ -236,6 +237,9 @@ function updateVariantUI(markDirty = true) {
   $("#completeOptions").hidden = isFree;
   $$(".wheel-option").forEach((element) => { element.hidden = !hasWheel; });
   $$(".button-option").forEach((element) => { element.hidden = !hasButtons; });
+  $("#buttonModeHelp").textContent = settings.controller_buttons_mode === "kill"
+    ? "Hold either button to suppress rotation or movement. Double-click it to toggle one-axis-only precision for the remaining motion."
+    : "Use the two controller buttons as additional shortcuts sent directly to your CAD application.";
   $("#modelContinue").disabled = false;
   updateReview();
   setupMotionStages();
@@ -279,11 +283,11 @@ function updateLiveVisualization(telemetry) {
   const rx = clamp(rotation[0] / 350, 1);
   const ry = clamp(rotation[1] / 350, 1);
   const rz = clamp(rotation[2] / 350, 1);
-  // Map the controller's physical rotations onto the displayed cube: RY turns around
-  // its right-facing axis, RZ twists around its vertical axis, and RX uses the remaining axis.
+  // Map the controller's physical rotations onto the displayed cube: RX turns around
+  // its right-facing axis, RZ twists around its vertical axis, and RY uses the remaining axis.
   // The position wrapper handles translation only; the solid cube handles rotation only.
   $("#motionCubePosition").style.transform = `translate3d(${tx * 27}px, ${-ty * 25}px, ${tz * 30}px) scale(${1 + tz * 0.08})`;
-  $("#motionCube").style.transform = `rotateX(${-18 + ry * 38}deg) rotateY(${28 + rz * 42}deg) rotateZ(${rx * 40}deg)`;
+  $("#motionCube").style.transform = `rotateX(${-18 + rx * 38}deg) rotateY(${28 + rz * 42}deg) rotateZ(${ry * 40}deg)`;
   const knobScale = 1 + tz * 0.18;
   $("#liveKnob").style.transform = `translate(${-tx * 8}px, ${-ty * 8}px) scale(${knobScale}) rotateX(${rx * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rz * 8}deg)`;
   const pressed = new Set(telemetry.keys || []);
@@ -526,7 +530,7 @@ async function connectCalibration(showErrors = true) {
     setLiveDataExpanded(false);
     state.serialSequence = 0;
     window.clearInterval(state.serialTimer);
-    state.serialTimer = window.setInterval(pollSerialOutput, 40);
+    state.serialTimer = window.setInterval(pollSerialOutput, SERIAL_POLL_INTERVAL_MS);
     await request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: "40" }) });
     renderMotionStage();
     return true;

@@ -301,7 +301,7 @@ def render_config(settings: ErgonoMouseSettings) -> str:
         else "// Lighting disabled by ErgonoMouse Setup."
     )
     encoder_block = (
-        f"#define ENCODER_CLK 2\n#define ENCODER_DT 3\n#define ROTARY_AXIS {rotary_axis}"
+        f"#define ENCODER_CLK 3\n#define ENCODER_DT 2\n#define ROTARY_AXIS {rotary_axis}"
         if settings.has_wheel
         else "// Encoder disabled by ErgonoMouse Setup\n#define ROTARY_AXIS 0"
     )

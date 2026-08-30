@@ -76,7 +76,7 @@ The firmware automatically centres all eight sensors at startup. The generated l
 
 ## Validation and tuning after flashing
 
-The application owns the serial connection and presents only the checks present on the selected build; users do not need to open an IDE serial monitor or remember numeric debug modes. Every physical button is detected and checked individually, wheel builds get a bidirectional encoder check, and precision-button builds explain and verify both movement locks. Centre finding updates the running firmware immediately. Runtime tuning can be saved to EEPROM. The travel report remains diagnostic: if it reports a weak or blocked axis, correct the printed mechanism or wiring before changing sensitivity.
+The application owns the serial connection and presents only the checks present on the selected build; users do not need to open an IDE serial monitor or remember numeric debug modes. Every physical button is detected and checked individually, wheel builds get a bidirectional encoder check, and precision-button builds explain and verify both movement locks. Holding a precision button suppresses rotation or translation as before; double-clicking that button toggles an extra dominant-axis filter for the remaining motion group, allowing translation or rotation on only one axis at a time. Centre finding updates the running firmware immediately. Runtime tuning can be saved to EEPROM. The travel report remains diagnostic: if it reports a weak or blocked axis, correct the printed mechanism or wiring before changing sensitivity.
 
 ## Development
 

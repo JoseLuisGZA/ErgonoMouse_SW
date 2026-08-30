@@ -347,19 +347,9 @@ void loop() {
 
 // if the kill-key feature is enabled, rotations or translations are killed=set to zero
 #if (NUMKILLKEYS == 2)
-  if (keyVals[KILLROT] == LOW) {
-    // check for the raw keyVal and not keyOut, because keyOut is only 1 for a single iteration.
-    // keyVals has inverse Logic due to pull-ups kill rotation
-    velocity[ROTX] = 0;
-    velocity[ROTY] = 0;
-    velocity[ROTZ] = 0;
-  }
-  if (keyVals[KILLTRANS] == LOW) {
-    // kill translation
-    velocity[TRANSX] = 0;
-    velocity[TRANSY] = 0;
-    velocity[TRANSZ] = 0;
-  }
+  // A hold keeps the original group-isolation behavior. A quick double-click toggles
+  // dominant-axis filtering for that button's remaining translation or rotation group.
+  applyKillButtons(velocity, keyVals);
 #endif
 
   // report velocity and keys after possible kill-key feature

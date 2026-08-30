@@ -4,6 +4,13 @@ All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomou
 
 ## Unreleased
 
+## 4.4.0-rc.7 — Front-axis motion and one-axis precision
+
+- Drew the X/Y/Z guide from the cube's front corner, swapped the RX/RY cube rotations, inverted the default wheel zoom direction and rebalanced the motion card into a 60/40 visualization/instruction split with added controller spacing.
+- Increased setup telemetry capture from 50 Hz to 100 Hz and browser sampling from 25 Hz to approximately 60 Hz, while removing serial-port enumeration from the frame-rate path.
+- Added a per-button dominant-axis precision mode: holding either kill button keeps its normal rotation/translation isolation, while double-clicking it toggles one-axis-only filtering for the remaining motion group.
+- Explained the precision-button double-click gesture in Preferences and the guided motion check.
+
 ## 4.4.0-rc.6 — Physical cube axes and in-place Tune saving
 
 - Remapped the live cube so RZ twists around its vertical axis, RY rotates around its right-facing axis and RX drives the remaining rotation.

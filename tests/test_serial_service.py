@@ -88,6 +88,13 @@ class SerialServiceTests(unittest.TestCase):
         self.assertEqual(result["lines"], [])
         self.assertNotIn("@TEL", "\n".join(line["text"] for line in result["lines"]))
 
+    def test_live_output_does_not_rescan_serial_ports_at_display_cadence(self) -> None:
+        session = SerialSession()
+        with patch("app.serial_service.serial_ports") as ports:
+            result = session.output()
+        ports.assert_not_called()
+        self.assertFalse(result["connected"])
+
     def test_wheel_telemetry_reports_direction_without_rotating_a_visual(self) -> None:
         session = SerialSession()
         session._append("@TEL,0,0,0,0,0,0,0,18")

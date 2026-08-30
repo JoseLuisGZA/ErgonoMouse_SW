@@ -7,7 +7,7 @@
 
 // a dead zone above the following value will be warned
 #define DEADZONEWARNING 10
-#define SETUP_TELEMETRY_INTERVAL_MS 20
+#define SETUP_TELEMETRY_INTERVAL_MS 10
 
 #ifndef HALLEFFECT
   // a centerpoint below or above those values will be warned (384..640)

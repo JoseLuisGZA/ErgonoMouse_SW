@@ -4,3 +4,4 @@
 void readAllFromKeys(int* keyVals);
 void setupKeys();
 void evalKeys(int* keyVals, uint8_t* keyOut, uint8_t* keyState);
+void applyKillButtons(int16_t* velocity, int* keyVals);

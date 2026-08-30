@@ -156,7 +156,7 @@
               </label>
               <label class="preference-row button-option" hidden>
                 <span class="preference-icon">●</span>
-                <span><b>Two precision buttons</b><small>Hold one while moving to isolate a precise motion.</small></span>
+                <span><b>Two precision buttons</b><small id="buttonModeHelp">Hold either button to suppress rotation or movement. Double-click it to toggle one-axis-only precision for the remaining motion.</small></span>
                 <select id="buttonMode"><option value="kill">Hold to isolate motion</option><option value="hid">Use as CAD shortcuts</option></select>
               </label>
               <label class="preference-row toggle-preference">
@@ -245,9 +245,9 @@
 
             <div class="motion-test-card" id="motionTestCard">
               <div class="motion-visual live-motion-visual" aria-label="Live controller motion">
-                <div class="cube-scene" aria-hidden="true">
-                  <div class="motion-cube-position" id="motionCubePosition"><div class="motion-cube" id="motionCube"><i class="front">Front</i><i class="back">Back</i><i class="right">R</i><i class="left">L</i><i class="top">Top</i><i class="bottom">Bottom</i></div></div>
-                  <span class="axis-label axis-x">X</span><span class="axis-label axis-y">Y</span><span class="axis-label axis-z">Z</span>
+                <div class="cube-stage" aria-hidden="true">
+                  <div class="cube-scene"><div class="motion-cube-position" id="motionCubePosition"><div class="motion-cube" id="motionCube"><i class="front">Front</i><i class="back">Back</i><i class="right">R</i><i class="left">L</i><i class="top">Top</i><i class="bottom">Bottom</i></div></div></div>
+                  <div class="axis-guide"><span class="axis-line axis-x"><b>X</b></span><span class="axis-line axis-y"><b>Y</b></span><span class="axis-line axis-z"><b>Z</b></span></div>
                 </div>
                 <div class="controller-live" id="controllerLive">
                   <div class="controller-silhouette">

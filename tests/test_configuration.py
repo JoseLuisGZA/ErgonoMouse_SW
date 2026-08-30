@@ -47,8 +47,8 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn("#define KEYLIST {10, 16, 14, 1, 0, 15, 5, 7}", output)
         self.assertIn("#define NUMHIDKEYS 6", output)
         self.assertIn("#define NUMKILLKEYS 2", output)
-        self.assertIn("#define ENCODER_CLK 2", output)
-        self.assertIn("#define ENCODER_DT 3", output)
+        self.assertIn("#define ENCODER_CLK 3", output)
+        self.assertIn("#define ENCODER_DT 2", output)
         self.assertIn("#define ROTARY_AXIS 2", output)
 
     def test_always_on_lighting_does_not_consume_a_signal_pin(self) -> None:
