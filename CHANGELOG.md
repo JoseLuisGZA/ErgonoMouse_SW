@@ -4,6 +4,12 @@ All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomou
 
 ## Unreleased
 
+## 4.4.0-rc.6 — Physical cube axes and in-place Tune saving
+
+- Remapped the live cube so RZ twists around its vertical axis, RY rotates around its right-facing axis and RX drives the remaining rotation.
+- Swapped the drawn X and Y axis-label positions to match the corrected cube orientation.
+- Replaced the Tune-page save-note phrases with an Apply action that persists tuning, key assignments and axis mapping without leaving the page.
+
 ## 4.4.0-rc.5 — Literal rotation axes and centred controls
 
 - Corrected the live cube so RX, RY and RZ rotate around the displayed X, Y and Z axes respectively.

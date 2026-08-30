@@ -279,10 +279,11 @@ function updateLiveVisualization(telemetry) {
   const rx = clamp(rotation[0] / 350, 1);
   const ry = clamp(rotation[1] / 350, 1);
   const rz = clamp(rotation[2] / 350, 1);
-  // Keep the scene axes literal: RX, RY and RZ rotate around X, Y and Z respectively.
+  // Map the controller's physical rotations onto the displayed cube: RY turns around
+  // its right-facing axis, RZ twists around its vertical axis, and RX uses the remaining axis.
   // The position wrapper handles translation only; the solid cube handles rotation only.
   $("#motionCubePosition").style.transform = `translate3d(${tx * 27}px, ${-ty * 25}px, ${tz * 30}px) scale(${1 + tz * 0.08})`;
-  $("#motionCube").style.transform = `rotateX(${-18 + rx * 38}deg) rotateY(${28 + ry * 42}deg) rotateZ(${rz * 40}deg)`;
+  $("#motionCube").style.transform = `rotateX(${-18 + ry * 38}deg) rotateY(${28 + rz * 42}deg) rotateZ(${rx * 40}deg)`;
   const knobScale = 1 + tz * 0.18;
   $("#liveKnob").style.transform = `translate(${-tx * 8}px, ${-ty * 8}px) scale(${knobScale}) rotateX(${rx * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rz * 8}deg)`;
   const pressed = new Set(telemetry.keys || []);
@@ -759,7 +760,7 @@ async function saveAxisMapping({ persist = false, quiet = false } = {}) {
 function resetKeyMapping() {
   const count = hidKeyCount();
   renderKeyMapping(Array.from({ length: count }, (_, index) => index + 1));
-  $("#tuningStatus").textContent = "Default key order selected — save to apply";
+  $("#tuningStatus").textContent = "Default key order selected — select Apply to save";
 }
 
 async function resetCenter() {
@@ -782,6 +783,7 @@ async function resetCenter() {
 
 function updateTuningAvailability() {
   const connected = state.connectedForCalibration;
+  $("#applyTuning").disabled = !connected;
   $("#finishTuning").disabled = !connected;
   $("#resetCenter").disabled = !connected;
   $("#resetKeyMap").disabled = !connected;
@@ -799,13 +801,33 @@ async function saveTuning() {
   $("#tuningStatus").textContent = "Settings applied to the controller";
 }
 
+async function persistTuningChanges() {
+  await saveTuning();
+  await saveKeyMapping({ quiet: true });
+  await saveAxisMapping({ persist: true, quiet: true });
+  $("#tuningStatus").textContent = "Changes saved to the controller";
+}
+
+async function applyTuning() {
+  const button = $("#applyTuning");
+  button.disabled = true;
+  button.textContent = "Applying…";
+  try {
+    await persistTuningChanges();
+    toast("Tuning changes saved.");
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    button.textContent = "Apply";
+    button.disabled = !state.connectedForCalibration;
+  }
+}
+
 async function finishTuning() {
   const button = $("#finishTuning");
   button.disabled = true;
   try {
-    await saveTuning();
-    await saveKeyMapping({ quiet: true });
-    await saveAxisMapping({ persist: true, quiet: true });
+    await persistTuningChanges();
     state.completed = true;
     await request("/api/setup/complete", { method: "POST", body: "{}" });
     $("#resumeTuning").hidden = false;
@@ -835,6 +857,7 @@ function bindEvents() {
     setLiveDataExpanded($("#calibrationOutput").hidden);
   });
   $("#finishTuning").addEventListener("click", finishTuning);
+  $("#applyTuning").addEventListener("click", applyTuning);
   $("#recommendedTuning").addEventListener("click", async () => {
     ["translationTune", "verticalTune", "rotationTune", "stabilityTune", "curvePrecision", "curveBoost"].forEach((id) => { $(`#${id}`).value = "5"; });
     $("#curveMode").value = "adaptive";

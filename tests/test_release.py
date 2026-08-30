@@ -89,14 +89,24 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn("AXIS_MAP_ADDRESS = KEY_ORDER_ADDRESS + sizeof(RuntimeKeyOrderRecord)", source)
         self.assertIn("applyRuntimeAxisMapping(velocity);", loop)
 
-    def test_live_visualization_uses_literal_rotation_axes_and_centred_controls(self) -> None:
+    def test_live_visualization_uses_physical_rotation_axes_and_centred_controls(self) -> None:
         project = Path(__file__).resolve().parents[1]
         script = (project / "app" / "static" / "app.js").read_text(encoding="utf-8")
         styles = (project / "app" / "static" / "app.css").read_text(encoding="utf-8")
-        self.assertIn("rotateX(${-18 + rx * 38}deg)", script)
-        self.assertIn("rotateY(${28 + ry * 42}deg)", script)
-        self.assertIn("rotateZ(${rz * 40}deg)", script)
+        markup = (project / "app" / "static" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("rotateX(${-18 + ry * 38}deg)", script)
+        self.assertIn("rotateY(${28 + rz * 42}deg)", script)
+        self.assertIn("rotateZ(${rx * 40}deg)", script)
         self.assertIn("rotateX(${rx * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rz * 8}deg)", script)
+        self.assertIn('<span class="axis-label axis-x">X</span>', markup)
+        self.assertIn('<span class="axis-label axis-y">Y</span>', markup)
+        self.assertIn(".axis-x { left: 7px; bottom: 3px;", styles)
+        self.assertIn(".axis-y { right: 0; top: 53px;", styles)
+        self.assertNotIn("Assignments are saved with", markup)
+        self.assertNotIn("Changes apply live and are saved with", markup)
+        self.assertIn('<button id="applyTuning" class="secondary-button" type="button">Apply</button>', markup)
+        self.assertIn("await persistTuningChanges();", script)
+        self.assertIn('$("#applyTuning").addEventListener("click", applyTuning);', script)
         self.assertIn(".live-knob { position: absolute; left: 50%;", styles)
         self.assertIn(".live-top-keys, .live-bottom-keys { left: 50%;", styles)
 

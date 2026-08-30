@@ -315,7 +315,6 @@
               <section class="tuning-tool-card" id="keyMappingCard">
                 <div class="tool-card-heading"><div><b>Key assignments</b><small>Correct swapped wiring or choose which logical key each physical key controls.</small></div><button id="resetKeyMap" class="text-button" type="button">Default order</button></div>
                 <div id="keyMapRows" class="key-map-rows"></div>
-                <small class="key-map-save-note">Assignments are saved with “Save and finish”.</small>
               </section>
             </div>
 
@@ -332,11 +331,11 @@
                 <label><input type="checkbox" data-axis-invert="RY" /><span>Invert RY</span></label>
                 <label><input type="checkbox" data-axis-invert="RZ" /><span>Invert RZ</span></label>
               </div>
-              <small class="axis-save-note">Changes apply live and are saved with “Save and finish”.</small>
             </section>
 
             <div class="screen-actions">
               <button class="text-button" id="tuningBack" type="button">Back</button>
+              <button id="applyTuning" class="secondary-button" type="button">Apply</button>
               <button id="finishTuning" class="primary-button" type="button">Save and finish <span>→</span></button>
             </div>
           </section>
