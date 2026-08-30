@@ -2,9 +2,7 @@ let motionStages = [];
 
 function buildMotionStages() {
   const settings = settingsFromForm();
-  const stages = [
-    { mode: "1", title: "Check the eight inputs", help: "Move one internal joystick axis at a time and confirm the live values respond.", start: "Start input check", done: "All inputs respond", wait: 0 },
-  ];
+  const stages = [];
   const controls = [];
   if (settings.base_variant === "six_keys") {
     [10, 16, 14, 1, 0, 15].forEach((pin, index) => controls.push({ index, label: `Key ${index + 1} · D${pin}` }));
@@ -17,18 +15,18 @@ function buildMotionStages() {
     labels.forEach((label, index) => controls.push({ index: offset + index, label }));
   }
   if (controls.length) {
-    stages.push({ kind: "buttons", mode: "1", controls, title: "Press every key", help: "Press and release each key once. Detected keys turn green automatically.", start: "Start key check", done: "All keys detected", wait: 0 });
+    stages.push({ autoStart: true, kind: "buttons", mode: "1", controls, title: "Press every key", help: "Press and release each key once. Detected keys turn green automatically.", done: "All keys detected", wait: 0 });
   }
   if (["wheel", "full"].includes(settings.control_variant)) {
-    stages.push({ mode: "9", title: "Turn the wheel both ways", help: "Rotate the wheel clockwise and counter-clockwise. The live encoder value must move in both directions.", start: "Start wheel check", done: "Wheel responds both ways", wait: 0 });
+    stages.push({ autoStart: true, mode: "9", title: "Turn the wheel both ways", help: "Rotate the wheel clockwise and counter-clockwise, then confirm both directions respond.", done: "Wheel responds both ways", wait: 0 });
   }
   if (["buttons", "full"].includes(settings.control_variant) && settings.controller_buttons_mode === "kill") {
-    stages.push({ mode: "6", title: "Try the precision buttons", help: "Hold Rotation lock while moving to allow translation only. Hold Movement lock to allow rotation only.", start: "Start precision check", done: "Both locks work", wait: 0 });
+    stages.push({ autoStart: true, mode: "6", title: "Try the precision buttons", help: "Hold Rotation lock while moving to allow translation only. Hold Movement lock to allow rotation only.", done: "Both locks work", wait: 0 });
   }
   stages.push(
-    { mode: "11", title: "Find the centre", help: "Take your hand off the controller. It will measure its resting position and idle noise.", start: "Find centre", done: "Centre found", wait: 2600 },
-    { mode: "20", title: "Capture full travel", help: "Take your time for 30 seconds. Push, pull, twist, and tilt fully in every direction, making sure you reach the complete travel in each direction.", start: "Start 30-second check", done: "Travel captured", wait: 32500 },
-    { mode: "4", title: "Verify all six motions", help: "Check move left/right, forward/back, up/down, and rotation around all three axes.", start: "Start 6DOF check", done: "All motions work", wait: 0 },
+    { autoStart: false, mode: "11", title: "Find the centre", help: "Take your hand off the controller. It will measure its resting position and idle noise.", start: "Find centre", done: "Centre found", wait: 2600 },
+    { autoStart: false, mode: "20", title: "Capture full travel", help: "Take your time for 30 seconds. Push, pull, twist, and tilt fully in every direction, making sure you reach the complete travel in each direction.", start: "Start 30-second check", done: "Travel captured", wait: 32500 },
+    { autoStart: true, mode: "4", title: "Verify all six motions", help: "Check move left/right, forward/back, up/down, and rotation around all three axes.", done: "All motions work", wait: 0 },
   );
   return stages;
 }
@@ -47,6 +45,7 @@ const state = {
   installProgressTimer: null,
   motionStage: 0,
   motionStageRunning: false,
+  motionStageActivating: false,
   connectedForCalibration: false,
   detectedControls: new Set(),
   tuningBackScreen: 5,
@@ -54,6 +53,7 @@ const state = {
   autoConnectAttempted: false,
   telemetry: { translation: [0, 0, 0], rotation: [0, 0, 0], keys: [], wheel: 0 },
   keyMapping: [],
+  axisMapping: { inverted: ["TZ", "RZ"], swapGroups: false },
   inspectMode: new URLSearchParams(window.location.search).has("inspect"),
 };
 
@@ -211,7 +211,6 @@ function updateActionAvailability() {
   $("#installFirmware").disabled = !hasDevice || !state.configured;
   $("#connectCalibration").disabled = !hasDevice || state.connectedForCalibration;
   $("#resumeTuning").hidden = !state.canTune;
-  $("#headerTune").hidden = !state.canTune;
 }
 
 async function refreshStatus(silent = false) {
@@ -280,11 +279,12 @@ function updateLiveVisualization(telemetry) {
   const rx = clamp(rotation[0] / 350, 1);
   const ry = clamp(rotation[1] / 350, 1);
   const rz = clamp(rotation[2] / 350, 1);
-  // Translation and rotation use separate elements so one motion cannot be
-  // visually interpreted as the other. Firmware order is TX, TY, TZ, RX, RY, RZ.
-  $("#motionCubePosition").style.transform = `translate3d(${tx * 27}px, ${-tz * 25}px, ${ty * 30}px) scale(${1 + ty * 0.08})`;
-  $("#motionCube").style.transform = `rotateX(${-18 + rx * 38}deg) rotateY(${28 + ry * 42}deg) rotateZ(${rz * 40}deg)`;
-  $("#liveKnob").style.transform = `translate(${tx * 7}px, ${-tz * 6}px) rotateX(${rx * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rz * 8}deg)`;
+  // The position wrapper handles translation only; the solid cube handles rotation only.
+  // The physical X/Z rotation convention is intentionally exchanged in the display.
+  $("#motionCubePosition").style.transform = `translate3d(${tx * 27}px, ${-ty * 25}px, ${tz * 30}px) scale(${1 + tz * 0.08})`;
+  $("#motionCube").style.transform = `rotateX(${-18 + rz * 38}deg) rotateY(${28 + ry * 42}deg) rotateZ(${rx * 40}deg)`;
+  const knobScale = 1 + tz * 0.18;
+  $("#liveKnob").style.transform = `translate(${-tx * 8}px, ${-ty * 8}px) scale(${knobScale}) rotateX(${rz * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rx * 8}deg)`;
   const pressed = new Set(telemetry.keys || []);
   $$('[data-live-key]').forEach((key) => key.classList.toggle("pressed", pressed.has(Number(key.dataset.liveKey))));
   const wheelDirection = Number(telemetry.wheelDirection) || 0;
@@ -428,6 +428,7 @@ function setupMotionStages() {
   motionStages = buildMotionStages();
   state.motionStage = 0;
   state.motionStageRunning = false;
+  state.motionStageActivating = false;
   state.detectedControls = new Set();
   const dots = $("#stageDots");
   dots.innerHTML = motionStages.map((_, index) => `<button type="button" aria-label="Check ${index + 1}" data-stage-dot="${index}"></button>`).join("");
@@ -448,10 +449,12 @@ function renderMotionStage() {
   $("#motionStageTitle").textContent = state.motionStage >= motionStages.length ? "Everything responds" : stage.title;
   $("#motionStageHelp").textContent = state.motionStage >= motionStages.length ? "The controller is ready to finish setup." : stage.help;
   const detectedAll = !isButtonCheck || stage.controls.every((control) => state.detectedControls.has(control.index));
-  $("#runMotionStage").textContent = state.motionStageRunning
-    ? (isButtonCheck && !detectedAll ? `${state.detectedControls.size} of ${stage.controls.length} detected` : stage.done)
-    : stage.start;
-  $("#runMotionStage").disabled = !state.connectedForCalibration || state.motionStage >= motionStages.length || (state.motionStageRunning && !detectedAll);
+  $("#runMotionStage").textContent = state.motionStageActivating
+    ? "Preparing…"
+    : state.motionStageRunning
+      ? (isButtonCheck && !detectedAll ? `${state.detectedControls.size} of ${stage.controls.length} detected` : stage.done)
+      : (stage.start || "Waiting for connection");
+  $("#runMotionStage").disabled = !state.connectedForCalibration || state.motionStage >= motionStages.length || state.motionStageActivating || (state.motionStageRunning && !detectedAll);
   $$('[data-stage-dot]').forEach((dot, dotIndex) => {
     dot.classList.toggle("active", dotIndex === state.motionStage);
     dot.classList.toggle("complete", dotIndex < state.motionStage);
@@ -461,7 +464,43 @@ function renderMotionStage() {
     $("#runMotionStage").hidden = true;
   } else {
     $("#runMotionStage").hidden = false;
+    if (stage.autoStart && state.connectedForCalibration && !state.motionStageRunning && !state.motionStageActivating) {
+      window.setTimeout(activateAutomaticMotionStage, 0);
+    }
   }
+}
+
+async function startCurrentMotionStage() {
+  if (state.motionStage >= motionStages.length || state.motionStageRunning || state.motionStageActivating) return;
+  const stage = motionStages[state.motionStage];
+  const button = $("#runMotionStage");
+  state.motionStageActivating = true;
+  renderMotionStage();
+  try {
+    await request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: stage.mode }) });
+    if (stage.kind === "buttons") state.detectedControls = new Set();
+    state.motionStageRunning = true;
+    state.motionStageActivating = false;
+    renderMotionStage();
+    if (stage.wait) {
+      button.disabled = true;
+      button.textContent = "Measuring…";
+      window.setTimeout(() => {
+        button.disabled = false;
+        button.textContent = stage.done;
+      }, stage.wait);
+    }
+    $("#calibrationTerminal").hidden = false;
+  } catch (error) {
+    state.motionStageActivating = false;
+    renderMotionStage();
+    toast(error.message, true);
+  }
+}
+
+function activateAutomaticMotionStage() {
+  const stage = motionStages[state.motionStage];
+  if (stage?.autoStart) startCurrentMotionStage();
 }
 
 async function connectCalibration(showErrors = true) {
@@ -481,8 +520,8 @@ async function connectCalibration(showErrors = true) {
     $("#disconnectCalibration").hidden = false;
     $("#disconnectCalibration").disabled = false;
     $("#calibrationTerminal").hidden = false;
-    $("#calibrationOutput").textContent = "Connected. Start the first motion check.\n";
-    $("#calibrationOutputPreview").textContent = "Connected. Start the first motion check.";
+    $("#calibrationOutput").textContent = "Connected. Live checks begin automatically.\n";
+    $("#calibrationOutputPreview").textContent = "Connected. Live checks begin automatically.";
     setLiveDataExpanded(false);
     state.serialSequence = 0;
     window.clearInterval(state.serialTimer);
@@ -536,32 +575,15 @@ async function disconnectCalibration() {
 
 async function runMotionStage() {
   if (state.motionStage >= motionStages.length) return;
-  const stage = motionStages[state.motionStage];
-  const button = $("#runMotionStage");
   if (state.motionStageRunning) {
     state.motionStage += 1;
     state.motionStageRunning = false;
+    state.motionStageActivating = false;
     request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: "40" }) }).catch(() => {});
     renderMotionStage();
     return;
   }
-  try {
-    await request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: stage.mode }) });
-    if (stage.kind === "buttons") state.detectedControls = new Set();
-    state.motionStageRunning = true;
-    renderMotionStage();
-    button.textContent = stage.wait ? "Measuring…" : button.textContent;
-    if (stage.wait) {
-      button.disabled = true;
-      window.setTimeout(() => {
-        button.disabled = false;
-        button.textContent = stage.done;
-      }, stage.wait);
-    }
-    $("#calibrationTerminal").hidden = false;
-  } catch (error) {
-    toast(error.message, true);
-  }
+  await startCurrentMotionStage();
 }
 
 async function pollSerialOutput() {
@@ -613,6 +635,7 @@ function continueToTuning() {
   request("/api/serial/command", { method: "POST", body: JSON.stringify({ mode: "40" }) }).catch(() => {});
   showScreen(6);
   loadKeyMapping();
+  loadAxisMapping();
 }
 
 async function enterDirectTuning(returnScreen) {
@@ -624,7 +647,7 @@ async function enterDirectTuning(returnScreen) {
   }
   if (!state.connectedForCalibration && !await connectCalibration()) return;
   showScreen(6);
-  await loadKeyMapping();
+  await Promise.all([loadKeyMapping(), loadAxisMapping()]);
 }
 
 async function leaveTuning() {
@@ -664,8 +687,8 @@ function renderKeyMapping(mapping = state.keyMapping) {
   if (!count) return;
   if (!Array.isArray(mapping) || mapping.length !== count) mapping = Array.from({ length: count }, (_, index) => index + 1);
   state.keyMapping = mapping;
-  const options = Array.from({ length: count }, (_, index) => `<option value="${index + 1}">Logical Key ${index + 1}</option>`).join("");
-  $("#keyMapRows").innerHTML = mapping.map((logical, physical) => `<label class="key-map-row"><span>Physical Key ${physical + 1}</span><select data-key-map="${physical}">${options}</select></label>`).join("");
+  const options = Array.from({ length: count }, (_, index) => `<option value="${index + 1}">Key ${index + 1}</option>`).join("");
+  $("#keyMapRows").innerHTML = mapping.map((logical, physical) => `<label class="key-map-row"><span>Physical ${physical + 1}</span><select aria-label="Logical key for physical key ${physical + 1}" data-key-map="${physical}">${options}</select></label>`).join("");
   $$('[data-key-map]').forEach((select, index) => {
     select.value = String(mapping[index]);
     select.disabled = !state.connectedForCalibration;
@@ -693,6 +716,44 @@ async function saveKeyMapping({ quiet = false } = {}) {
   const result = await request("/api/serial/keymap", { method: "POST", body: JSON.stringify({ mapping }) });
   renderKeyMapping(result.mapping);
   if (!quiet) toast("Key assignments saved to the controller.");
+}
+
+function renderAxisMapping(mapping = state.axisMapping) {
+  const inverted = new Set(mapping?.inverted || []);
+  state.axisMapping = { inverted: [...inverted], swapGroups: mapping?.swapGroups === true };
+  $("#swapAxisGroups").checked = state.axisMapping.swapGroups;
+  $$('[data-axis-invert]').forEach((control) => {
+    control.checked = inverted.has(control.dataset.axisInvert);
+    control.disabled = !state.connectedForCalibration;
+  });
+}
+
+function axisMappingPayload() {
+  return {
+    inverted: $$('[data-axis-invert]:checked').map((control) => control.dataset.axisInvert),
+    swapGroups: $("#swapAxisGroups").checked,
+  };
+}
+
+async function loadAxisMapping() {
+  renderAxisMapping();
+  if (!state.connectedForCalibration) return;
+  try {
+    const result = await request("/api/serial/axis-mapping");
+    renderAxisMapping(result.mapping);
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
+async function saveAxisMapping({ persist = false, quiet = false } = {}) {
+  if (!state.connectedForCalibration) throw new Error("Connect the controller before changing axis mapping.");
+  const result = await request("/api/serial/axis-mapping", {
+    method: "POST",
+    body: JSON.stringify({ ...axisMappingPayload(), save: persist }),
+  });
+  renderAxisMapping(result.mapping);
+  if (!quiet) $("#tuningStatus").textContent = persist ? "Axis mapping saved" : "Axis mapping applied live";
 }
 
 function resetKeyMapping() {
@@ -724,7 +785,7 @@ function updateTuningAvailability() {
   $("#finishTuning").disabled = !connected;
   $("#resetCenter").disabled = !connected;
   $("#resetKeyMap").disabled = !connected;
-  $$(".tuning-row input, .tuning-row select, [data-key-map]").forEach((control) => { control.disabled = !connected; });
+  $$(".tuning-row input, .tuning-row select, [data-key-map], #swapAxisGroups, [data-axis-invert]").forEach((control) => { control.disabled = !connected; });
   $("#tuningStatus").textContent = connected
     ? "Controller connected — adjustments apply live"
     : "Connect the controller to adjust it live";
@@ -744,6 +805,7 @@ async function finishTuning() {
   try {
     await saveTuning();
     await saveKeyMapping({ quiet: true });
+    await saveAxisMapping({ persist: true, quiet: true });
     state.completed = true;
     await request("/api/setup/complete", { method: "POST", body: "{}" });
     $("#resumeTuning").hidden = false;
@@ -768,7 +830,6 @@ function bindEvents() {
   $("#finishCalibration").addEventListener("click", continueToTuning);
   $("#tuningBack").addEventListener("click", leaveTuning);
   $("#resumeTuning").addEventListener("click", () => enterDirectTuning(0));
-  $("#headerTune").addEventListener("click", () => enterDirectTuning(state.currentScreen));
   $("#readyFineTune").addEventListener("click", () => enterDirectTuning(7));
   $("#toggleLiveData").addEventListener("click", () => {
     setLiveDataExpanded($("#calibrationOutput").hidden);
@@ -787,15 +848,15 @@ function bindEvents() {
   $("#curveMode").addEventListener("change", async () => { renderTuningLabels(); try { await saveTuning(); } catch (error) { toast(error.message, true); } });
   $("#resetCenter").addEventListener("click", resetCenter);
   $("#resetKeyMap").addEventListener("click", resetKeyMapping);
+  $$("#swapAxisGroups, [data-axis-invert]").forEach((control) => {
+    control.addEventListener("change", async () => {
+      try { await saveAxisMapping(); } catch (error) { toast(error.message, true); }
+    });
+  });
 
   $$('input[name="edition"], input[name="controllerStyleChoice"], #handedness, #baseVariant, #controlVariant, #buttonMode, #wheelAxis, #exclusiveMode')
     .forEach((element) => element.addEventListener("change", () => updateVariantUI(true)));
 
-  const help = $("#helpDialog");
-  $("#openHelp").addEventListener("click", () => help.showModal());
-  $("#closeHelp").addEventListener("click", () => help.close());
-  $("#closeHelpAction").addEventListener("click", () => help.close());
-  help.addEventListener("click", (event) => { if (event.target === help) help.close(); });
   const about = $("#aboutDialog");
   $("#openAbout").addEventListener("click", () => about.showModal());
   $("#closeAbout").addEventListener("click", () => about.close());

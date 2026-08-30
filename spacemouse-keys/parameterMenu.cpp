@@ -180,6 +180,23 @@ int userInput(
         prog.cmd = next;
         Serial.read();
       } //   'e' enable/disable continuous setup telemetry
+      else if (progMode && !cmdDone && next == 'a') {
+        cmdDone = true;
+        prog.cmd = next;
+        Serial.read();
+      } //   'a' preview runtime axis mapping flags
+      else if (progMode && !cmdDone && next == 'g') {
+        cmdDone = true;
+        valDone = true;
+        prog.cmd = next;
+        Serial.read();
+      } //   'g' read runtime axis mapping flags
+      else if (progMode && !cmdDone && next == 'j') {
+        cmdDone = true;
+        valDone = true;
+        prog.cmd = next;
+        Serial.read();
+      } //   'j' save runtime axis mapping flags
 #endif
       else if (next == 'q' || next == 27) {
         state = 2;
@@ -346,6 +363,23 @@ void executeProgCommand(ParamData &par) {
       } else {
         setSetupTelemetryEnabled(prog.value == 1);
       }
+    }
+
+    else if (prog.cmd == 'a') {
+      int encoded = (int)prog.value;
+      if (prog.value != encoded || encoded < 0 || encoded > 127 ||
+          !setRuntimeAxisMapping((uint8_t)encoded)) {
+        prog.retval = PE_INVALID_VALUE;
+      }
+    }
+
+    else if (prog.cmd == 'g') {
+      printRuntimeAxisMapping();
+      return;
+    }
+
+    else if (prog.cmd == 'j') {
+      if (!saveRuntimeAxisMapping()) prog.retval = PE_INVALID_VALUE;
     }
   }
 

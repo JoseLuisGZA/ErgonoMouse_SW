@@ -3,6 +3,7 @@
 #include "config.h"
 #include "parameterMenu.h"
 #include "runtimeSettings.h"
+#include "kinematics.h"
 
 #if NUMHIDKEYS > MAX_RUNTIME_KEYS
 #error "Runtime key remapping supports at most eight HID keys"
@@ -12,6 +13,12 @@ namespace {
 const uint32_t KEY_ORDER_MAGIC = 0x454D4B59UL; // "EMKY"
 const uint8_t KEY_ORDER_VERSION = 1;
 const int KEY_ORDER_ADDRESS = BASE_ADDRESS_PAR + sizeof(ParamStorage);
+const uint32_t AXIS_MAP_MAGIC = 0x454D4158UL; // "EMAX"
+const uint8_t AXIS_MAP_VERSION = 1;
+const uint8_t AXIS_SWAP_GROUPS_FLAG = 1U << 6;
+const uint8_t AXIS_MAP_ALLOWED_FLAGS = 0x7F;
+// RC4 corrects the final TZ and RZ directions without invalidating saved tuning parameters.
+const uint8_t DEFAULT_AXIS_MAP_FLAGS = (1U << TRANSZ) | (1U << ROTZ);
 
 struct RuntimeKeyOrderRecord {
   uint32_t magic;
@@ -21,9 +28,20 @@ struct RuntimeKeyOrderRecord {
   uint8_t checksum;
 } __attribute__((packed));
 
+const int AXIS_MAP_ADDRESS = KEY_ORDER_ADDRESS + sizeof(RuntimeKeyOrderRecord);
+
+struct RuntimeAxisMapRecord {
+  uint32_t magic;
+  uint8_t version;
+  uint8_t flags;
+  uint8_t checksum;
+} __attribute__((packed));
+
 uint8_t runtimeKeyOrder[MAX_RUNTIME_KEYS];
 uint8_t pendingKeyOrder[MAX_RUNTIME_KEYS];
 bool setupTelemetryEnabled = false;
+uint8_t runtimeAxisFlags = DEFAULT_AXIS_MAP_FLAGS;
+uint8_t pendingAxisFlags = DEFAULT_AXIS_MAP_FLAGS;
 
 #if NUMHIDKEYS > 0
 const uint8_t defaultButtonCodes[NUMHIDKEYS] = BUTTONLIST;
@@ -59,6 +77,16 @@ bool orderIsValid(const uint8_t *order) {
     used[order[i]] = true;
   }
   return true;
+}
+
+uint8_t axisChecksumFor(const RuntimeAxisMapRecord &record) {
+  return record.version ^ record.flags ^ 0xA5;
+}
+
+bool axisRecordIsValid(const RuntimeAxisMapRecord &record) {
+  return record.magic == AXIS_MAP_MAGIC && record.version == AXIS_MAP_VERSION &&
+         (record.flags & ~AXIS_MAP_ALLOWED_FLAGS) == 0 &&
+         record.checksum == axisChecksumFor(record);
 }
 }
 
@@ -132,4 +160,59 @@ void setSetupTelemetryEnabled(bool enabled) {
 
 bool isSetupTelemetryEnabled() {
   return setupTelemetryEnabled;
+}
+
+void resetRuntimeAxisMapping() {
+  runtimeAxisFlags = DEFAULT_AXIS_MAP_FLAGS;
+  pendingAxisFlags = DEFAULT_AXIS_MAP_FLAGS;
+}
+
+void loadRuntimeAxisMapping() {
+  resetRuntimeAxisMapping();
+  RuntimeAxisMapRecord record;
+  EEPROM.get(AXIS_MAP_ADDRESS, record);
+  if (axisRecordIsValid(record)) {
+    runtimeAxisFlags = record.flags;
+    pendingAxisFlags = record.flags;
+  }
+}
+
+bool setRuntimeAxisMapping(uint8_t flags) {
+  if ((flags & ~AXIS_MAP_ALLOWED_FLAGS) != 0) return false;
+  runtimeAxisFlags = flags;
+  pendingAxisFlags = flags;
+  return true;
+}
+
+bool saveRuntimeAxisMapping() {
+  RuntimeAxisMapRecord record;
+  record.magic = AXIS_MAP_MAGIC;
+  record.version = AXIS_MAP_VERSION;
+  record.flags = pendingAxisFlags;
+  record.checksum = axisChecksumFor(record);
+  EEPROM.put(AXIS_MAP_ADDRESS, record);
+  runtimeAxisFlags = pendingAxisFlags;
+  return true;
+}
+
+uint8_t getRuntimeAxisMapping() {
+  return runtimeAxisFlags;
+}
+
+void printRuntimeAxisMapping() {
+  Serial.print(F("<g"));
+  Serial.println(runtimeAxisFlags);
+}
+
+void applyRuntimeAxisMapping(int16_t *velocity) {
+  if (runtimeAxisFlags & AXIS_SWAP_GROUPS_FLAG) {
+    for (uint8_t axis = 0; axis < 3; axis++) {
+      int16_t value = velocity[axis];
+      velocity[axis] = velocity[axis + 3];
+      velocity[axis + 3] = value;
+    }
+  }
+  for (uint8_t axis = 0; axis < RUNTIME_AXIS_COUNT; axis++) {
+    if (runtimeAxisFlags & (1U << axis)) velocity[axis] = -velocity[axis];
+  }
 }

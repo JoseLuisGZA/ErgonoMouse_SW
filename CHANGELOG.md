@@ -4,6 +4,15 @@ All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomou
 
 ## Unreleased
 
+## 4.4.0-rc.4 — Runtime axis correction and streamlined acceptance
+
+- Added an EEPROM-backed final output map with corrected TZ/RZ defaults, live translation/rotation group swapping and independent inversion of all six axes.
+- Removed raw telemetry frames from the readable live log while preserving structured 25 Hz visualization updates.
+- Simplified motion acceptance by removing the redundant raw-input stage and auto-starting key, wheel, precision-button and final 6DOF checks.
+- Corrected cube and controller-preview axis semantics, including horizontal/vertical knob movement, push/pull scaling and a fully contained wheel.
+- Reflowed Tune into aligned response, centre, key and axis-mapping controls with readable typography and a compact 3 × 2 key grid.
+- Removed the redundant header Tune and Need help actions while retaining the welcome and Ready-page fine-tuning routes.
+
 ## 4.4.0-rc.3 — ErgonoMouse source-axis correction
 
 - Corrected the ErgonoMouse analog input order so each joystick's up/down channel feeds AX/BX/CX/DX and its left/right channel feeds AY/BY/CY/DY before kinematics are calculated.

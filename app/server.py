@@ -74,6 +74,12 @@ class SetupHandler(BaseHTTPRequestHandler):
             except (ValueError, RuntimeError, OSError) as error:
                 self._json({"ok": False, "error": str(error)}, status_code=HTTPStatus.BAD_REQUEST)
             return
+        if path == "/api/serial/axis-mapping":
+            try:
+                self._json({"ok": True, "mapping": serial_session.axis_mapping(), **serial_session.status()})
+            except (ValueError, RuntimeError, OSError) as error:
+                self._json({"ok": False, "error": str(error)}, status_code=HTTPStatus.BAD_REQUEST)
+            return
         if path == "/assets/ergonomouse.webp":
             self._file(resource_path("pictures", "ergonomouse.webp"))
             return
@@ -158,6 +164,15 @@ class SetupHandler(BaseHTTPRequestHandler):
                     mapping = serial_session.reset_keymap(body.get("count"))
                 else:
                     mapping = serial_session.set_keymap(body.get("mapping"))
+                self._json({"ok": True, "mapping": mapping, **serial_session.status()})
+                return
+            if path == "/api/serial/axis-mapping":
+                body = self._request_json()
+                mapping = serial_session.set_axis_mapping(
+                    inverted=body.get("inverted"),
+                    swap_groups=body.get("swapGroups"),
+                    save=body.get("save", False),
+                )
                 self._json({"ok": True, "mapping": mapping, **serial_session.status()})
                 return
         except (ValueError, RuntimeError, OSError, TypeError, json.JSONDecodeError) as error:

@@ -124,6 +124,7 @@ void setup() {
   getParametersFromEEPROM(par);
 #endif
   loadRuntimeKeyOrder();
+  loadRuntimeAxisMapping();
 
 // setup the keys e.g. to internal pull-ups
 #if NUMKEYS > 0
@@ -320,6 +321,9 @@ void loop() {
 #if (ROTARY_AXIS > 0) && (ROTARY_AXIS < 7)
   calcEncoderWheel(velocity, (debug == 9), par);
 #endif
+
+  // Apply the user's final output mapping before diagnostics, kill keys, telemetry and HID.
+  applyRuntimeAxisMapping(velocity);
 
 //--- if defined, evaluate keys
 #if NUMKEYS > 0

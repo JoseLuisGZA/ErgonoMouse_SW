@@ -85,6 +85,8 @@ class SerialServiceTests(unittest.TestCase):
         self.assertEqual(result["telemetry"]["rotation"], [40, -50, 60])
         self.assertEqual(result["telemetry"]["keys"], [0, 2])
         self.assertEqual(result["telemetry"]["wheel"], 18)
+        self.assertEqual(result["lines"], [])
+        self.assertNotIn("@TEL", "\n".join(line["text"] for line in result["lines"]))
 
     def test_wheel_telemetry_reports_direction_without_rotating_a_visual(self) -> None:
         session = SerialSession()
@@ -107,6 +109,19 @@ class SerialServiceTests(unittest.TestCase):
         self.assertTrue(payload.endswith(">v\r\n"))
         with self.assertRaisesRegex(ValueError, "exactly once"):
             session.set_keymap([1, 1, 2])
+
+    def test_axis_mapping_is_bounded_previewed_and_persisted(self) -> None:
+        session = SerialSession()
+        connection = Mock(is_open=True)
+        session._connection = connection
+        with patch("app.serial_service.time.sleep"):
+            result = session.set_axis_mapping(["TZ", "RZ"], True, save=True)
+        self.assertEqual(result, {"inverted": ["TZ", "RZ"], "swapGroups": True})
+        payload = b"".join(call.args[0] for call in connection.write.call_args_list).decode("ascii")
+        self.assertIn(">a100\r\n", payload)
+        self.assertTrue(payload.endswith(">j\r\n"))
+        with self.assertRaisesRegex(ValueError, "selected from"):
+            session.set_axis_mapping(["BAD"], False)
 
 
 if __name__ == "__main__":

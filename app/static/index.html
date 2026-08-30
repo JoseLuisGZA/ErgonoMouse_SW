@@ -17,9 +17,7 @@
           <span>ErgonoMouse <b>Setup</b></span>
         </a>
         <div class="header-actions">
-          <button class="help-button" id="headerTune" type="button" hidden>Tune</button>
           <button class="help-button" id="openAbout" type="button">About</button>
-          <button class="help-button" id="openHelp" type="button">Need help?</button>
         </div>
       </header>
 
@@ -263,9 +261,9 @@
                 </div>
               </div>
               <div class="motion-instructions">
-                <span id="motionCounter">Check 1 of 5</span>
-                <h2 id="motionStageTitle">Check the eight inputs</h2>
-                <p id="motionStageHelp">Move one internal joystick axis at a time and confirm the values respond.</p>
+                <span id="motionCounter">Preparing checks</span>
+                <h2 id="motionStageTitle">Live controller check</h2>
+                <p id="motionStageHelp">The first applicable check starts automatically after connection.</p>
                 <div id="controlChecklist" class="control-checklist" hidden aria-live="polite"></div>
                 <button id="runMotionStage" class="primary-button" type="button" disabled>Start this check</button>
               </div>
@@ -292,7 +290,6 @@
             <div class="screen-copy compact-copy">
               <p class="step-kicker">Step 6 of 7</p>
               <h1 id="tuningTitle">Tune the feel.</h1>
-              <p class="lead">Try the controller as you adjust the settings with these simple controls.</p>
             </div>
 
             <div class="tuning-layout">
@@ -322,6 +319,22 @@
               </section>
             </div>
 
+            <section class="axis-mapping-card">
+              <div class="axis-mapping-heading">
+                <div><b>Axis mapping</b><small>Correct a reversed direction or exchange all translation and rotation outputs.</small></div>
+                <label class="axis-swap"><input id="swapAxisGroups" type="checkbox" /><i class="switch"></i><span>Swap translation / rotation</span></label>
+              </div>
+              <div class="axis-invert-grid" aria-label="Invert individual axes">
+                <label><input type="checkbox" data-axis-invert="TX" /><span>Invert TX</span></label>
+                <label><input type="checkbox" data-axis-invert="TY" /><span>Invert TY</span></label>
+                <label><input type="checkbox" data-axis-invert="TZ" checked /><span>Invert TZ</span></label>
+                <label><input type="checkbox" data-axis-invert="RX" /><span>Invert RX</span></label>
+                <label><input type="checkbox" data-axis-invert="RY" /><span>Invert RY</span></label>
+                <label><input type="checkbox" data-axis-invert="RZ" checked /><span>Invert RZ</span></label>
+              </div>
+              <small class="axis-save-note">Changes apply live and are saved with “Save and finish”.</small>
+            </section>
+
             <div class="screen-actions">
               <button class="text-button" id="tuningBack" type="button">Back</button>
               <button id="finishTuning" class="primary-button" type="button">Save and finish <span>→</span></button>
@@ -346,13 +359,6 @@
         </section>
       </div>
     </main>
-
-    <dialog id="helpDialog" class="help-dialog">
-      <button id="closeHelp" class="dialog-close" aria-label="Close help">×</button>
-      <p class="eyebrow">Help</p><h2>Setup essentials</h2>
-      <div class="help-list"><div><span>1</span><p><b>Use a data cable</b><small>Some USB cables only provide power.</small></p></div><div><span>2</span><p><b>Keep the controller still</b><small>It learns its centre when starting.</small></p></div><div><span>3</span><p><b>Reset when asked</b><small>A quick double-tap helps the installer find the bootloader.</small></p></div></div>
-      <button id="closeHelpAction" class="primary-button" type="button">Got it</button>
-    </dialog>
 
     <dialog id="aboutDialog" class="help-dialog about-dialog">
       <button id="closeAbout" class="dialog-close" aria-label="Close about">×</button>

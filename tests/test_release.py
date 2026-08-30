@@ -75,6 +75,15 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn("BASE_ADDRESS_PAR + sizeof(ParamStorage)", source)
         self.assertIn("recordIsValid", source)
 
+    def test_runtime_axis_mapping_is_versioned_and_corrects_z_directions(self) -> None:
+        project = Path(__file__).resolve().parents[1]
+        source = (project / "spacemouse-keys" / "runtimeSettings.cpp").read_text(encoding="utf-8")
+        loop = (project / "spacemouse-keys" / "spacemouse-keys.ino").read_text(encoding="utf-8")
+        self.assertIn("AXIS_MAP_VERSION = 1", source)
+        self.assertIn("DEFAULT_AXIS_MAP_FLAGS = (1U << TRANSZ) | (1U << ROTZ)", source)
+        self.assertIn("AXIS_MAP_ADDRESS = KEY_ORDER_ADDRESS + sizeof(RuntimeKeyOrderRecord)", source)
+        self.assertIn("applyRuntimeAxisMapping(velocity);", loop)
+
 
 if __name__ == "__main__":
     unittest.main()

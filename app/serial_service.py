@@ -17,6 +17,7 @@ CURVE_BOOST = {1: 0.65, 2: 0.8, 3: 0.95, 4: 1.05, 5: 1.15, 6: 1.25, 7: 1.33, 8: 
 TELEMETRY_PATTERN = re.compile(
     r"^@TEL,(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(\d+),(-?\d+)$"
 )
+AXIS_NAMES = ("TX", "TY", "TZ", "RX", "RY", "RZ")
 
 MOVEMENT_SENSITIVITY = {1: 1.6, 2: 1.42, 3: 1.25, 4: 1.12, 5: 1.0, 6: 0.9, 7: 0.8, 8: 0.72, 9: 0.65}
 VERTICAL_SENSITIVITY = {
@@ -227,6 +228,47 @@ class SerialSession:
         self._program_command(">u")
         return list(range(1, count + 1))
 
+    def set_axis_mapping(self, inverted: list[str], swap_groups: bool, save: bool = False) -> dict[str, Any]:
+        if not self.connected:
+            raise RuntimeError("Connect to the ErgonoMouse before changing axis mapping")
+        if not isinstance(inverted, list) or any(axis not in AXIS_NAMES for axis in inverted):
+            raise ValueError("inverted axes must be selected from TX, TY, TZ, RX, RY, RZ")
+        if len(set(inverted)) != len(inverted):
+            raise ValueError("each inverted axis may be selected only once")
+        if not isinstance(swap_groups, bool) or not isinstance(save, bool):
+            raise ValueError("axis mapping switches must be true or false")
+        flags = sum(1 << AXIS_NAMES.index(axis) for axis in inverted)
+        if swap_groups:
+            flags |= 1 << 6
+        self._program_command(f">a{flags}")
+        if save:
+            self._program_command(">j")
+        return {"inverted": [axis for axis in AXIS_NAMES if axis in inverted], "swapGroups": swap_groups}
+
+    def axis_mapping(self) -> dict[str, Any]:
+        if not self.connected:
+            raise RuntimeError("Connect to the ErgonoMouse before reading axis mapping")
+        with self._lock:
+            after = self._sequence
+        self._program_command(">g")
+        deadline = time.monotonic() + 1.0
+        while time.monotonic() < deadline:
+            with self._lock:
+                replies = [
+                    entry["text"] for entry in self._lines
+                    if entry["sequence"] > after and entry["text"].startswith("<g")
+                ]
+            if replies:
+                flags = int(replies[-1][2:])
+                if flags < 0 or flags > 127:
+                    raise RuntimeError("The controller returned an invalid axis mapping")
+                return {
+                    "inverted": [axis for index, axis in enumerate(AXIS_NAMES) if flags & (1 << index)],
+                    "swapGroups": bool(flags & (1 << 6)),
+                }
+            time.sleep(0.02)
+        raise RuntimeError("The controller did not return its axis mapping")
+
     @staticmethod
     def _tuning_level(name: str, value: int) -> int:
         if isinstance(value, bool) or not isinstance(value, int) or value not in range(1, 10):
@@ -295,6 +337,7 @@ class SerialSession:
                     "wheel": wheel_position,
                     "wheelDirection": self._wheel_direction,
                 }
+                return
             self._sequence += 1
             self._lines.append(
                 {"sequence": self._sequence, "time": round(time.time(), 3), "kind": kind, "text": text}
