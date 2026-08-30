@@ -293,8 +293,8 @@ function updateLiveVisualization(telemetry) {
   const pressed = new Set(telemetry.keys || []);
   $$('[data-live-key]').forEach((key) => key.classList.toggle("pressed", pressed.has(Number(key.dataset.liveKey))));
   const wheelDirection = Number(telemetry.wheelDirection) || 0;
-  $("#liveWheelUp").classList.toggle("active", wheelDirection > 0);
-  $("#liveWheelDown").classList.toggle("active", wheelDirection < 0);
+  $("#liveWheelUp").classList.toggle("active", wheelDirection < 0);
+  $("#liveWheelDown").classList.toggle("active", wheelDirection > 0);
   const values = [...translation, ...rotation].map((value) => Math.abs(Number(value) || 0));
   const maxValue = Math.max(...values);
   const activeKeys = pressed.size;
