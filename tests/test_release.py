@@ -75,14 +75,30 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn("BASE_ADDRESS_PAR + sizeof(ParamStorage)", source)
         self.assertIn("recordIsValid", source)
 
-    def test_runtime_axis_mapping_is_versioned_and_corrects_z_directions(self) -> None:
+    def test_runtime_axis_mapping_separates_baseline_from_user_overrides(self) -> None:
         project = Path(__file__).resolve().parents[1]
         source = (project / "spacemouse-keys" / "runtimeSettings.cpp").read_text(encoding="utf-8")
         loop = (project / "spacemouse-keys" / "spacemouse-keys.ino").read_text(encoding="utf-8")
-        self.assertIn("AXIS_MAP_VERSION = 1", source)
-        self.assertIn("DEFAULT_AXIS_MAP_FLAGS = (1U << TRANSZ) | (1U << ROTZ)", source)
+        self.assertIn("AXIS_MAP_VERSION = 2", source)
+        self.assertIn("(1U << TRANSZ) | (1U << ROTX) | (1U << ROTY) | (1U << ROTZ)", source)
+        self.assertIn("DEFAULT_AXIS_MAP_FLAGS = 0", source)
+        self.assertLess(
+            source.index("BASELINE_AXIS_INVERT_FLAGS &"),
+            source.index("if (runtimeAxisFlags & AXIS_SWAP_GROUPS_FLAG)"),
+        )
         self.assertIn("AXIS_MAP_ADDRESS = KEY_ORDER_ADDRESS + sizeof(RuntimeKeyOrderRecord)", source)
         self.assertIn("applyRuntimeAxisMapping(velocity);", loop)
+
+    def test_live_visualization_uses_literal_rotation_axes_and_centred_controls(self) -> None:
+        project = Path(__file__).resolve().parents[1]
+        script = (project / "app" / "static" / "app.js").read_text(encoding="utf-8")
+        styles = (project / "app" / "static" / "app.css").read_text(encoding="utf-8")
+        self.assertIn("rotateX(${-18 + rx * 38}deg)", script)
+        self.assertIn("rotateY(${28 + ry * 42}deg)", script)
+        self.assertIn("rotateZ(${rz * 40}deg)", script)
+        self.assertIn("rotateX(${rx * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rz * 8}deg)", script)
+        self.assertIn(".live-knob { position: absolute; left: 50%;", styles)
+        self.assertIn(".live-top-keys, .live-bottom-keys { left: 50%;", styles)
 
 
 if __name__ == "__main__":

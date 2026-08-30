@@ -14,11 +14,14 @@ const uint32_t KEY_ORDER_MAGIC = 0x454D4B59UL; // "EMKY"
 const uint8_t KEY_ORDER_VERSION = 1;
 const int KEY_ORDER_ADDRESS = BASE_ADDRESS_PAR + sizeof(ParamStorage);
 const uint32_t AXIS_MAP_MAGIC = 0x454D4158UL; // "EMAX"
-const uint8_t AXIS_MAP_VERSION = 1;
+// Version 2 makes saved bits user overrides only; the corrected hardware signs
+// are part of the firmware baseline and therefore do not appear selected in Tune.
+const uint8_t AXIS_MAP_VERSION = 2;
 const uint8_t AXIS_SWAP_GROUPS_FLAG = 1U << 6;
 const uint8_t AXIS_MAP_ALLOWED_FLAGS = 0x7F;
-// RC4 corrects the final TZ and RZ directions without invalidating saved tuning parameters.
-const uint8_t DEFAULT_AXIS_MAP_FLAGS = (1U << TRANSZ) | (1U << ROTZ);
+const uint8_t BASELINE_AXIS_INVERT_FLAGS =
+    (1U << TRANSZ) | (1U << ROTX) | (1U << ROTY) | (1U << ROTZ);
+const uint8_t DEFAULT_AXIS_MAP_FLAGS = 0;
 
 struct RuntimeKeyOrderRecord {
   uint32_t magic;
@@ -205,6 +208,9 @@ void printRuntimeAxisMapping() {
 }
 
 void applyRuntimeAxisMapping(int16_t *velocity) {
+  for (uint8_t axis = 0; axis < RUNTIME_AXIS_COUNT; axis++) {
+    if (BASELINE_AXIS_INVERT_FLAGS & (1U << axis)) velocity[axis] = -velocity[axis];
+  }
   if (runtimeAxisFlags & AXIS_SWAP_GROUPS_FLAG) {
     for (uint8_t axis = 0; axis < 3; axis++) {
       int16_t value = velocity[axis];

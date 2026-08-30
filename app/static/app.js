@@ -53,7 +53,7 @@ const state = {
   autoConnectAttempted: false,
   telemetry: { translation: [0, 0, 0], rotation: [0, 0, 0], keys: [], wheel: 0 },
   keyMapping: [],
-  axisMapping: { inverted: ["TZ", "RZ"], swapGroups: false },
+  axisMapping: { inverted: [], swapGroups: false },
   inspectMode: new URLSearchParams(window.location.search).has("inspect"),
 };
 
@@ -279,12 +279,12 @@ function updateLiveVisualization(telemetry) {
   const rx = clamp(rotation[0] / 350, 1);
   const ry = clamp(rotation[1] / 350, 1);
   const rz = clamp(rotation[2] / 350, 1);
+  // Keep the scene axes literal: RX, RY and RZ rotate around X, Y and Z respectively.
   // The position wrapper handles translation only; the solid cube handles rotation only.
-  // The physical X/Z rotation convention is intentionally exchanged in the display.
   $("#motionCubePosition").style.transform = `translate3d(${tx * 27}px, ${-ty * 25}px, ${tz * 30}px) scale(${1 + tz * 0.08})`;
-  $("#motionCube").style.transform = `rotateX(${-18 + rz * 38}deg) rotateY(${28 + ry * 42}deg) rotateZ(${rx * 40}deg)`;
+  $("#motionCube").style.transform = `rotateX(${-18 + rx * 38}deg) rotateY(${28 + ry * 42}deg) rotateZ(${rz * 40}deg)`;
   const knobScale = 1 + tz * 0.18;
-  $("#liveKnob").style.transform = `translate(${-tx * 8}px, ${-ty * 8}px) scale(${knobScale}) rotateX(${rz * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rx * 8}deg)`;
+  $("#liveKnob").style.transform = `translate(${-tx * 8}px, ${-ty * 8}px) scale(${knobScale}) rotateX(${rx * 8}deg) rotateY(${ry * 8}deg) rotateZ(${rz * 8}deg)`;
   const pressed = new Set(telemetry.keys || []);
   $$('[data-live-key]').forEach((key) => key.classList.toggle("pressed", pressed.has(Number(key.dataset.liveKey))));
   const wheelDirection = Number(telemetry.wheelDirection) || 0;

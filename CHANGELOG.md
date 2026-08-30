@@ -4,6 +4,13 @@ All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomou
 
 ## Unreleased
 
+## 4.4.0-rc.5 — Literal rotation axes and centred controls
+
+- Corrected the live cube so RX, RY and RZ rotate around the displayed X, Y and Z axes respectively.
+- Corrected the controller knob so RZ drives its visible twist while RX and RY drive their matching tilts.
+- Centred the knob and six base-key controls inside the controller silhouette.
+- Moved corrected TZ and RX/RY/RZ signs into the firmware baseline; Tune inversion controls now start clear and represent only user overrides.
+
 ## 4.4.0-rc.4 — Runtime axis correction and streamlined acceptance
 
 - Added an EEPROM-backed final output map with corrected TZ/RZ defaults, live translation/rotation group swapping and independent inversion of all six axes.
