@@ -207,7 +207,7 @@ jobs:
             gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber "${release_files[@]}"
           else
             release_flags=()
-            if [[ "$GITHUB_REF_NAME" == *-* ]]; then release_flags+=(--prerelease); fi
+            if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then release_flags+=(--prerelease); fi
             gh release create "$GITHUB_REF_NAME" \
               --repo "$GITHUB_REPOSITORY" \
               --title "ErgonoMouse SW ${GITHUB_REF_NAME#ergonomouse-sw-v}" \

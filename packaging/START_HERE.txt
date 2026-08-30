@@ -1,4 +1,4 @@
-ERGONOMOUSE SETUP 4.1
+ERGONOMOUSE SETUP 4.4
 =====================
 
 1. Windows: run the installer. Linux: open the AppImage. macOS: drag the app

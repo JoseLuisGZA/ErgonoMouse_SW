@@ -8,14 +8,14 @@ ErgonoMouse SW keeps the proven [AndunHH SpaceMouse firmware](https://github.com
 
 ## Install it — no developer tools
 
-Verified 4.3.1 downloads:
+Verified 4.4.0 downloads:
 
-- **Windows x64:** [Setup installer (`.exe`)](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-windows-x86_64-setup.exe) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-windows-x86_64-setup.exe.sha256)
-- **macOS Apple Silicon (M1 or newer):** [DMG](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-macos-arm64.dmg) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-macos-arm64.dmg.sha256)
-- **macOS Intel:** [DMG](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-macos-x86_64.dmg) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-macos-x86_64.dmg.sha256)
-- **Linux x64:** [AppImage](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-linux-x86_64.AppImage) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-linux-x86_64.AppImage.sha256)
-- **Linux x64:** [Portable ZIP](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-linux-x86_64.zip) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.3.1/ErgonoMouse-Setup-4.3.1-linux-x86_64.zip.sha256)
-- [View all 4.3.1 release files](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/tag/ergonomouse-sw-v4.3.1)
+- **Windows x64:** [Setup installer (`.exe`)](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-windows-x86_64-setup.exe) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-windows-x86_64-setup.exe.sha256)
+- **macOS Apple Silicon (M1 or newer):** [DMG](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-macos-arm64.dmg) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-macos-arm64.dmg.sha256)
+- **macOS Intel:** [DMG](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-macos-x86_64.dmg) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-macos-x86_64.dmg.sha256)
+- **Linux x64:** [AppImage](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-linux-x86_64.AppImage) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-linux-x86_64.AppImage.sha256)
+- **Linux x64:** [Portable ZIP](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-linux-x86_64.zip) · [SHA-256](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/download/ergonomouse-sw-v4.4.0/ErgonoMouse-Setup-4.4.0-linux-x86_64.zip.sha256)
+- [View all 4.4.0 release files](https://github.com/JoseLuisGZA/ErgonoMouse_SW/releases/tag/ergonomouse-sw-v4.4.0)
 
 1. Download the package for your operating system above.
 2. Windows: run the Setup installer. macOS: open the DMG and copy the app to Applications. Linux: open the AppImage.

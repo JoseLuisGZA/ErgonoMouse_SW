@@ -42,6 +42,8 @@ class ReleaseTests(unittest.TestCase):
         self.assertNotIn('["codesign", "--force"', packager)
         self.assertIn("codesign --verify --deep --strict", workflow)
         self.assertIn('ditto "$mount_point/ErgonoMouse Setup.app"', workflow)
+        self.assertIn('if [[ "$GITHUB_REF_NAME" == *-rc.* ]]', workflow)
+        self.assertNotIn('if [[ "$GITHUB_REF_NAME" == *-* ]]', workflow)
 
     def test_markdown_local_links_resolve(self) -> None:
         project = Path(__file__).resolve().parents[1]

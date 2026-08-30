@@ -2,6 +2,14 @@
 
 All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomouse-sw-vX.Y.Z` prefix to avoid collisions with upstream firmware tags.
 
+## 4.4.0 — Guided live tuning and verified motion
+
+- Added structured live six-axis, key and wheel feedback with a configuration-aware 3D cube and controller visualization.
+- Added guided response tuning, centre reset, persistent key assignments and independent six-axis mapping controls.
+- Added precision-button translation/rotation isolation with optional dominant-axis mode, plus faster 100 Hz setup telemetry and approximately 60 Hz UI sampling.
+- Corrected the physical firmware, CAD and visualization mappings through Windows and Linux hardware acceptance, including the final Test motion wheel indicator.
+- Refined the complete setup flow, installation state handling and motion-check layout for stable cross-platform release.
+
 ## 4.4.0-rc.10 — Final cross-platform acceptance candidate
 
 - Lowered the X/Y/Z guide and made its centre dot black, while giving the complete live-motion panel one uniform background.
