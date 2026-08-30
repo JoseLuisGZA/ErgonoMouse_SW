@@ -79,6 +79,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn("keepDominantAxis(velocity, ROTX)", source)
         self.assertIn("applyKillButtons(velocity, keyVals);", loop)
         self.assertIn("How the precision buttons work", markup)
+        self.assertIn("so only one axis works at a time", markup)
         self.assertIn("It stays on after release; double-click the same button again", markup)
 
     def test_runtime_key_mapping_is_versioned_and_separate_from_parameter_storage(self) -> None:
@@ -107,7 +108,7 @@ class ReleaseTests(unittest.TestCase):
         script = (project / "app" / "static" / "app.js").read_text(encoding="utf-8")
         styles = (project / "app" / "static" / "app.css").read_text(encoding="utf-8")
         markup = (project / "app" / "static" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("translate3d(${tx * 27}px, ${-tz * 25}px, ${ty * 30}px)", script)
+        self.assertIn("translate3d(${-tx * 27}px, ${-tz * 25}px, ${ty * 30}px)", script)
         self.assertIn("rotateX(${-18 - rx * 38}deg)", script)
         self.assertIn("rotateY(${28 - rz * 42}deg)", script)
         self.assertIn("rotateZ(${-ry * 40}deg)", script)

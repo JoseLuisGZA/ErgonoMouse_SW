@@ -286,7 +286,7 @@ function updateLiveVisualization(telemetry) {
   const rz = clamp(rotation[2] / 350, 1);
   // The telemetry follows HID axis names. In the perspective view, HID TY is depth and HID TZ is
   // vertical. The cube rotations use the matching drawn axes, with signs chosen for physical motion.
-  $("#motionCubePosition").style.transform = `translate3d(${tx * 27}px, ${-tz * 25}px, ${ty * 30}px) scale(${1 + ty * 0.08})`;
+  $("#motionCubePosition").style.transform = `translate3d(${-tx * 27}px, ${-tz * 25}px, ${ty * 30}px) scale(${1 + ty * 0.08})`;
   $("#motionCube").style.transform = `rotateX(${-18 - rx * 38}deg) rotateY(${28 - rz * 42}deg) rotateZ(${-ry * 40}deg)`;
   const knobScale = 1 - tz * 0.18;
   $("#liveKnob").style.transform = `translate(${tx * 8}px, ${ty * 8}px) scale(${knobScale}) rotateX(${-rx * 8}deg) rotateY(${-ry * 8}deg) rotateZ(${rz * 8}deg)`;

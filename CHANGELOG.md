@@ -2,6 +2,10 @@
 
 All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomouse-sw-vX.Y.Z` prefix to avoid collisions with upstream firmware tags.
 
+## Unreleased
+
+- Corrected the live cube's remaining TX display direction and clarified that double-click precision leaves only one axis active at a time.
+
 ## 4.4.0-rc.8 — Verified HID and cube directions
 
 - Corrected the default HID signs so TX, TY, TZ, RX and RY follow physical CAD motion while RZ keeps its verified direction.
