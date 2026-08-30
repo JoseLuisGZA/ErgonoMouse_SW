@@ -38,6 +38,7 @@ const state = {
   configured: false,
   canTune: false,
   installed: false,
+  installing: false,
   completed: false,
   serialSequence: 0,
   serialTimer: null,
@@ -209,7 +210,7 @@ function configureInstallMode(portable) {
 function updateActionAvailability() {
   const hasDevice = Boolean(state.status && state.status.device.ok);
   state.canTune = hasDevice && state.configured;
-  $("#installFirmware").disabled = !hasDevice || !state.configured;
+  $("#installFirmware").disabled = state.installing || !hasDevice || !state.configured;
   $("#connectCalibration").disabled = !hasDevice || state.connectedForCalibration;
   $("#resumeTuning").hidden = !state.canTune;
 }
@@ -293,8 +294,8 @@ function updateLiveVisualization(telemetry) {
   const pressed = new Set(telemetry.keys || []);
   $$('[data-live-key]').forEach((key) => key.classList.toggle("pressed", pressed.has(Number(key.dataset.liveKey))));
   const wheelDirection = Number(telemetry.wheelDirection) || 0;
-  $("#liveWheelUp").classList.toggle("active", wheelDirection < 0);
-  $("#liveWheelDown").classList.toggle("active", wheelDirection > 0);
+  $("#liveWheelUp").classList.toggle("active", wheelDirection > 0);
+  $("#liveWheelDown").classList.toggle("active", wheelDirection < 0);
   const values = [...translation, ...rotation].map((value) => Math.abs(Number(value) || 0));
   const maxValue = Math.max(...values);
   const activeKeys = pressed.size;
@@ -374,6 +375,7 @@ function startInstallProgress() {
 
 function resetInstallUI() {
   window.clearInterval(state.installProgressTimer);
+  state.installing = false;
   showInstallState("installIdle");
   $("#installContinue").hidden = true;
   $("#installFirmware").hidden = false;
@@ -381,6 +383,7 @@ function resetInstallUI() {
 }
 
 async function installFirmware() {
+  if (state.installing) return;
   if (!state.status || !state.status.device.ok) {
     toast("Connect the ErgonoMouse before installing.", true);
     showScreen(1);
@@ -388,6 +391,7 @@ async function installFirmware() {
   }
   const portable = state.status.mode === "portable";
   const button = $("#installFirmware");
+  state.installing = true;
   button.disabled = true;
   showInstallState("installWorking");
   startInstallProgress();
@@ -411,6 +415,7 @@ async function installFirmware() {
     }
     window.clearInterval(state.installProgressTimer);
     $("#installProgressBar").style.width = "100%";
+    state.installing = false;
     state.installed = true;
     showInstallState("installSuccess");
     button.hidden = true;
@@ -419,6 +424,7 @@ async function installFirmware() {
     await refreshStatus(true);
   } catch (error) {
     window.clearInterval(state.installProgressTimer);
+    state.installing = false;
     state.installed = false;
     $("#installRecovery").textContent = error.message;
     showInstallState("installFailure");

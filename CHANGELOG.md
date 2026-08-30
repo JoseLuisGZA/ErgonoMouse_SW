@@ -2,6 +2,12 @@
 
 All notable ErgonoMouse SW releases are documented here. Tags use the `ergonomouse-sw-vX.Y.Z` prefix to avoid collisions with upstream firmware tags.
 
+## 4.4.0-rc.10 — Final cross-platform acceptance candidate
+
+- Lowered the X/Y/Z guide and made its centre dot black, while giving the complete live-motion panel one uniform background.
+- Kept Install firmware disabled throughout the complete flash operation before replacing it with Test motion.
+- Corrected only the Test motion wheel indicator direction, preserving the verified firmware and CAD motion mappings.
+
 ## 4.4.0-rc.9 — Corrected live control references
 
 - Corrected the live cube's remaining TX/TZ display directions, redrew the Y reference axis up-left at 45° from Z, flipped the Test motion wheel indicator to match the physical control, and clarified that double-click precision leaves only one axis active at a time.
