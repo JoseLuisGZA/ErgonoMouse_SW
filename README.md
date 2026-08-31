@@ -1,6 +1,11 @@
 # ErgonoMouse SW
 
-Firmware and a guided local setup experience for the **ErgonoMouse MK XX** 6DOF controller.
+Firmware and a guided local setup experience for the **ErgonoMouse MK XX** 6DOF controller. You can find the ErgonoMouse here:
+
+- **[Complete Version] [Printables]** [ErgonoMouse - 6DOF Controller Knob & Joystick with Wheel, Buttons & Keys](https://www.printables.com/model/974592-ergonomouse-6dof-controller-knob-joystick-with-whe)
+- **[Free Version] [Printables]** [ErgonoMouse (Free version) - 6DOF Controller Knob & Joystick](https://www.printables.com/model/973725-ergonomouse-free-version-6dof-controller-knob-joys)
+- **[Free Version] [Makerworld]** [ErgonoMouse (Free version) - 6DOF Controller Knob & Joystick](https://makerworld.com/en/models/1062479-ergonomouse-free-version-6dof-controller)
+- **[Free Version] [Thingiverse]** [ErgonoMouse (Free version) - 6DOF Controller Knob & Joystick](https://www.thingiverse.com/thing:6735102)
 
 ErgonoMouse SW keeps the proven [AndunHH SpaceMouse firmware](https://github.com/AndunHH/spacemouse) at its core and adds an ErgonoMouse-specific path from a finished hardware build to working CAD input. The setup runs locally, stores no data remotely, and replaces manual editing of a large C header for the common configuration.
 
